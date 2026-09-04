@@ -102,10 +102,15 @@ export function JourneyWorld() {
   // Audio ucapan si pemilik website & timer 3 detik setelah surat dibuka
   const ucapanAudioRef = useRef<HTMLAudioElement | null>(null);
   const ucapanTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLetterClosedRef = useRef(false);
+  const resumeOnClickRef = useRef<(() => void) | null>(null);
   const [isVoicePlaying, setIsVoicePlaying] = useState(false);
 
   // Fungsi memutar audio ucapan dari folder public/audio/memories/ucapan
   const playUcapanVoice = useCallback(() => {
+    // JIKA SURAT SUDAH DITUTUP, JANGAN PERNAH PUTAR AUDIO UCAPAN
+    if (isLetterClosedRef.current) return;
+
     if (!ucapanAudioRef.current) {
       const audio = new Audio('/audio/memories/ucapan/ucapan.m4a');
       audio.volume = 1.0;
@@ -119,6 +124,7 @@ export function JourneyWorld() {
         }
       };
       audio.onerror = () => {
+        if (isLetterClosedRef.current) return;
         // Fallback ke file aac jika diperlukan
         const fallback = new Audio('/audio/memories/ucapan/WhatsApp Audio 2026-09-04 at 23.19.51.aac');
         fallback.volume = 1.0;
@@ -132,18 +138,31 @@ export function JourneyWorld() {
 
     ucapanAudioRef.current.currentTime = 0;
     ucapanAudioRef.current.play().then(() => {
+      if (isLetterClosedRef.current) {
+        ucapanAudioRef.current?.pause();
+        return;
+      }
       setIsVoicePlaying(true);
     }).catch(() => {
+      if (isLetterClosedRef.current) return;
       // Jika autoplay diblokir browser, pasang listener satu kali klik
       const resumeOnClick = () => {
+        if (isLetterClosedRef.current) {
+          window.removeEventListener('click', resumeOnClick);
+          resumeOnClickRef.current = null;
+          return;
+        }
         ucapanAudioRef.current?.play().catch(() => {});
         window.removeEventListener('click', resumeOnClick);
+        resumeOnClickRef.current = null;
       };
+      resumeOnClickRef.current = resumeOnClick;
       window.addEventListener('click', resumeOnClick, { once: true });
     });
   }, []);
 
   const toggleVoiceAudio = useCallback(() => {
+    if (isLetterClosedRef.current) return;
     if (!ucapanAudioRef.current) {
       playUcapanVoice();
       return;
@@ -159,7 +178,12 @@ export function JourneyWorld() {
   // Cleanup audio dan timer saat unmount
   useEffect(() => {
     return () => {
+      isLetterClosedRef.current = true;
       if (ucapanTimerRef.current) clearTimeout(ucapanTimerRef.current);
+      if (resumeOnClickRef.current) {
+        window.removeEventListener('click', resumeOnClickRef.current);
+        resumeOnClickRef.current = null;
+      }
       if (ucapanAudioRef.current) {
         ucapanAudioRef.current.pause();
         ucapanAudioRef.current.src = '';
@@ -180,6 +204,7 @@ export function JourneyWorld() {
   // Kembang api & petasan menyala, lalu selang 3 detik suara petasan diturunkan menjadi backsound lembut
   // dan audio ucapan dari si pemilik website mulai diputar
   const handleLetterRevealed = useCallback(() => {
+    isLetterClosedRef.current = false;
     setIsFireworksActive(true);
 
     if (videoRef.current) {
@@ -201,9 +226,10 @@ export function JourneyWorld() {
       }
     }
 
-    // Selang 3 detik: suara petasan dijadikan backsound lembut dan audio ucapan pemilik diputar
+    // Selang 3 detik: jika surat masih terbuka, suara petasan dijadikan backsound lembut dan audio ucapan diputar
     if (ucapanTimerRef.current) clearTimeout(ucapanTimerRef.current);
     ucapanTimerRef.current = setTimeout(() => {
+      if (isLetterClosedRef.current) return;
       if (videoRef.current) {
         videoRef.current.volume = 0.18; // Backsound petasan lembut
       }
@@ -211,12 +237,21 @@ export function JourneyWorld() {
     }, 3000);
   }, [playUcapanVoice]);
 
-  // Trigger saat surat ditutup: Hentikan suara ucapan & pesawat perjalanan selanjutnya BARU DITAMPILKAN
+  // Trigger saat surat ditutup: HENTIKAN TOTAL suara ucapan & timer apapun, pesawat siap ditampilkan
   const handleLetterClosed = useCallback(() => {
+    isLetterClosedRef.current = true;
     setIsNextFlightReady(true);
-    if (ucapanTimerRef.current) clearTimeout(ucapanTimerRef.current);
+    if (ucapanTimerRef.current) {
+      clearTimeout(ucapanTimerRef.current);
+      ucapanTimerRef.current = null;
+    }
+    if (resumeOnClickRef.current) {
+      window.removeEventListener('click', resumeOnClickRef.current);
+      resumeOnClickRef.current = null;
+    }
     if (ucapanAudioRef.current) {
       ucapanAudioRef.current.pause();
+      ucapanAudioRef.current.currentTime = 0;
       setIsVoicePlaying(false);
     }
     // Kembalikan volume normal petasan
@@ -227,6 +262,7 @@ export function JourneyWorld() {
 
   // Trigger saat surat dibuka kembali
   const handleReopenLetterInJourney = useCallback(() => {
+    isLetterClosedRef.current = false;
     if (videoRef.current) {
       videoRef.current.volume = 0.18;
     }
