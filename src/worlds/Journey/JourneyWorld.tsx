@@ -400,15 +400,15 @@ export function JourneyWorld() {
       {/* 2. Setengah Layar Atas: Frame Video Elegan (Menampilkan Video Memori & Kembang Api) */}
       <div style={{
         position: 'absolute',
-        top: 0,
+        top: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
         left: 0,
         right: 0,
-        height: 'clamp(200px, 36vh, 380px)',
+        height: 'clamp(170px, 31vh, 300px)',
         zIndex: 5,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'calc(0.5rem + env(safe-area-inset-top, 0px)) clamp(0.75rem, 2.5vw, 1.5rem) 0.4rem',
+        padding: '0 clamp(0.75rem, 2.5vw, 1.5rem)',
         pointerEvents: 'none',
       }}>
         <div style={{
