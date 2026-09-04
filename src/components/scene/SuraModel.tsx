@@ -11,7 +11,7 @@
 // - Floating bobbing animation & putaran 360° saat diklik dengan stopPropagation!
 // ============================================================
 
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
