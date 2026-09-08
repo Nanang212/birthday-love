@@ -230,6 +230,7 @@ export const SurabayaMascots = React.memo(function SurabayaMascots({
 
   const [isAlbumOpen, setIsAlbumOpen] = useState(false);
   const [canOpenAlbum, setCanOpenAlbum] = useState(false);
+  const [hasAlbumBeenViewed, setHasAlbumBeenViewed] = useState(false);
 
   const [isHiuWalking, setIsHiuWalking] = useState(false);
   const [isBayaWalking, setIsBayaWalking] = useState(false);
@@ -265,11 +266,11 @@ export const SurabayaMascots = React.memo(function SurabayaMascots({
 
   const handleCloseAlbum = () => {
     setIsAlbumOpen(false);
-    // Setelah selesai melihat album, lanjut ke dialog pamitan (index 13: hiu_14)
+    setCanOpenAlbum(false);
+    setHasAlbumBeenViewed(true);
+    // Setelah selesai melihat album, langsung lanjut ke dialog pamitan (index 13: hiu_14)
     if (dialogueIndex <= 12) {
-      setTimeout(() => {
-        setDialogueIndex(13);
-      }, 500);
+      setDialogueIndex(13);
     }
   };
 
@@ -709,13 +710,14 @@ export const SurabayaMascots = React.memo(function SurabayaMascots({
         onClose={handleCloseAlbum}
       />
 
-      {/* 📖 Tombol Pemicu Buka Album Foto 3D (Hanya muncul sebelum pamitan, hilang saat keluar/selesai) */}
-      {canOpenAlbum && !isAlbumOpen && !isExiting && !isGone && dialogueIndex <= 13 && (
+      {/* 📖 Tombol Pemicu Buka Album Foto 3D (Hanya muncul saat dialog ke-13 sebelum dibuka, hilang permanen setelah ditutup) */}
+      {canOpenAlbum && !isAlbumOpen && !hasAlbumBeenViewed && !isExiting && !isGone && dialogueIndex === 12 && (
         <Html position={[0, 0.45, 0.2]} center distanceFactor={4.5}>
           <button
             id="btn-open-album-3d"
             onClick={(e) => {
               e.stopPropagation();
+              setCanOpenAlbum(false);
               setIsAlbumOpen(true);
             }}
             style={{
