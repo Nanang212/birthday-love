@@ -403,13 +403,13 @@ export const ConcertMascots: React.FC<ConcertMascotsProps> = ({
         )}
       </group>
 
-      {/* ── 🐊 BAYA (BUAYA) — Masuk dari kiri (x = -5.5 -> -0.25) ── */}
+      {/* ── 🐊 BAYA (BUAYA) — Masuk dari kiri (x = -5.5 -> -0.25) — Menghadap ke kanan (Capy) sama seperti Sura ── */}
       <group
         ref={bayaGroupRef}
         position={[-5.5, baseY, 0.2]}
-        rotation={[0, -0.15, 0]}
+        rotation={[0, 0.18, 0]}
       >
-        <BayaModel isSpeaking={isSpeakingBaya} scale={0.48} />
+        <BayaModel isSpeaking={isSpeakingBaya} scale={0.48} facingRight={true} />
 
         {/* Balon Dialog Baya (Kecil di Atas Kepala) */}
         {currentDialogue?.speaker === 'baya' && (
