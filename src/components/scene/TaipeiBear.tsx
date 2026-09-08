@@ -15,10 +15,11 @@
 // 6. Pesawat perjalanan selanjutnya HANYA muncul setelah surat di-close!
 // ============================================================
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { createHeartShape } from './ThreeLoveHeart3D';
 
 export interface TaipeiBearProps {
   isActive?: boolean;
@@ -33,6 +34,12 @@ export interface TaipeiBearProps {
   isVoicePlaying?: boolean;
   onToggleVoice?: () => void;
   onClick?: () => void;
+  autoCloseTrigger?: number;
+  reopenTrigger?: number;
+  dialogueTriggerIndex?: number;
+  onDialogueFinished?: (index: number) => void;
+  isFlatLetterMode?: boolean;
+  isCarryingHeart?: boolean;
 }
 
 // Palet warna resmi Bravo Bear (Formosan Black Bear)
@@ -65,9 +72,32 @@ const BEAR_DIALOGUES = [
     audio: '/audio/dialogue/taipei_bear_3.mp3',
     duration: 4600,
   },
+  {
+    id: 4,
+    text: 'Bagaimana Capy, apakah kamu menikmati perjalanan di website ini? ✨',
+    audio: '/audio/dialogue/taipei_bear_4.mp3',
+    duration: 4600,
+  },
+  {
+    id: 5,
+    text: 'Dan apakah kamu happy di hari yang spesial ini? 💖🥰 (Klik ikon cinta di depan ya!)',
+    audio: '/audio/dialogue/taipei_bear_5.mp3',
+    duration: 6800,
+  },
+  {
+    id: 6,
+    text: 'Apakah kamu sudah mengirimkan pesan ke WhatsApp? 💬💌',
+    // Tanpa audio, ditampilkan langsung dengan tombol konfirmasi
+  },
+  {
+    id: 7,
+    text: 'Makasihh ya sudah happy di perjalanan kali ini! Kalau kamu mau baca pesan pemilik lagi kamu bisa klik button di pojok kanan yaa, atau lanjut kembali naik pesawat di pojok kiri! 💖✈️',
+    audio: '/audio/dialogue/taipei_bear_6.mp3?v=2',
+    duration: 10500,
+  },
 ];
 
-type BearPhase = 'entering' | 'dialogue' | 'walking_to_right' | 'pulling_paper' | 'paper_revealed';
+type BearPhase = 'entering' | 'dialogue' | 'walking_to_right' | 'pulling_paper' | 'paper_revealed' | 'walking_to_center';
 
 export function TaipeiBear({
   isActive = false,
@@ -82,6 +112,12 @@ export function TaipeiBear({
   isVoicePlaying = false,
   onToggleVoice,
   onClick,
+  autoCloseTrigger,
+  reopenTrigger,
+  dialogueTriggerIndex,
+  onDialogueFinished,
+  isFlatLetterMode = false,
+  isCarryingHeart = false,
 }: TaipeiBearProps) {
   const rootGroupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
@@ -107,6 +143,23 @@ export function TaipeiBear({
   const [isLetterClosed, setIsLetterClosed] = useState<boolean>(false);
   const pullProgress = useRef<number>(0);
   const hasRevealedCallbackFired = useRef<boolean>(false);
+  const hasPulledPaperRef = useRef<boolean>(false);
+
+  // Geometri Hati 3D yang dibawa di tangan beruang
+  const heartGeometry = useMemo(() => {
+    const shape = createHeartShape();
+    const extrudeSettings: THREE.ExtrudeGeometryOptions = {
+      depth: 0.18,
+      bevelEnabled: true,
+      bevelSegments: 4,
+      steps: 1,
+      bevelSize: 0.05,
+      bevelThickness: 0.05,
+    };
+    const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+    geom.center();
+    return geom;
+  }, []);
 
   // Animasi spin 360° saat di-klik
   const spinRef = useRef<{ active: boolean; angle: number }>({
@@ -129,8 +182,9 @@ export function TaipeiBear({
 
   // Memutar audio dialog sekuensial
   const playDialogueStep = (index: number) => {
-    if (index >= BEAR_DIALOGUES.length) {
-      // Selesai dialog: Beruang jalan ke pojok kanan & Capy otomatis jalan ke pojok kiri!
+    // Selesai rangkaian dialog intro (0, 1, 2) -> beruang jalan ke kanan dan tarik kertas!
+    if (index >= 3 && !hasPulledPaperRef.current) {
+      hasPulledPaperRef.current = true;
       setCurrentDialogueIndex(-1);
       setIsDialoguePlaying(false);
       onStartPullingPaper?.();
@@ -140,12 +194,38 @@ export function TaipeiBear({
       return;
     }
 
+    // Selesai semua dialog (setelah dialog pamitan selesai -> index >= 6)
+    if (index >= BEAR_DIALOGUES.length) {
+      setCurrentDialogueIndex(-1);
+      setIsDialoguePlaying(false);
+      onDialogueFinished?.(5); // 5 = dialog pamitan/pilihan selesai
+      return;
+    }
+
+    if (index < 0 || index >= BEAR_DIALOGUES.length) {
+      setCurrentDialogueIndex(-1);
+      setIsDialoguePlaying(false);
+      return;
+    }
+
     const item = BEAR_DIALOGUES[index];
     setCurrentDialogueIndex(index);
     setIsDialoguePlaying(true);
 
+    // Saat masuk dialog 4 (id 5: "Dan apakah kamu happy..."), langsung aktifkan icon Love 3D!
+    if (index === 4) {
+      onDialogueFinished?.(4);
+    }
+
     if (audioRef.current) {
       audioRef.current.pause();
+    }
+
+    // Jika dialog tidak memiliki audio (dialog konfirmasi WA index 5):
+    // Cukup tampilkan balon dialog langsung tanpa audio, tunggu klik tombol "Iyaa, sudah"
+    if (!item.audio) {
+      setIsDialoguePlaying(false);
+      return;
     }
 
     const audio = new Audio(item.audio);
@@ -153,28 +233,102 @@ export function TaipeiBear({
     audioRef.current = audio;
 
     audio.onended = () => {
+      // Khusus dialog 4 (id 5: "Dan apakah kamu happy..."):
+      // BERHENTI DI SINI! JANGAN lanjut ke dialog berikutnya otomatis.
+      if (index === 4) {
+        setIsDialoguePlaying(true);
+        return;
+      }
+
       setIsDialoguePlaying(false);
+
+      // Jika dialog terakhir selesai:
+      if (index >= BEAR_DIALOGUES.length - 1) {
+        onDialogueFinished?.(5);
+        return;
+      }
+
       setTimeout(() => {
         playDialogueStep(index + 1);
       }, 700);
     };
 
     audio.onerror = () => {
+      if (index === 4) {
+        setIsDialoguePlaying(true);
+        return;
+      }
       setIsDialoguePlaying(false);
+      if (index >= BEAR_DIALOGUES.length - 1) {
+        onDialogueFinished?.(5);
+        return;
+      }
       setTimeout(() => {
         playDialogueStep(index + 1);
-      }, item.duration);
+      }, item.duration || 4000);
     };
 
     audio.play().catch(() => {
+      if (index === 4) {
+        setIsDialoguePlaying(true);
+        return;
+      }
+      if (index >= BEAR_DIALOGUES.length - 1) {
+        onDialogueFinished?.(5);
+        return;
+      }
       setTimeout(() => {
         playDialogueStep(index + 1);
-      }, item.duration);
+      }, item.duration || 4000);
     });
   };
 
+  // Trigger otomatis tutup surat dari luar (misal saat VN selesai)
+  const prevAutoCloseRef = useRef(autoCloseTrigger);
+  useEffect(() => {
+    if (autoCloseTrigger !== undefined && autoCloseTrigger !== prevAutoCloseRef.current) {
+      prevAutoCloseRef.current = autoCloseTrigger;
+      setIsLetterClosed(true);
+      setIsLetterCardVisible(false);
+      onLetterClosed?.();
+
+      // Jika beruang berada di pojok kanan (fase paper_revealed atau pulling_paper), ajak beruang jalan kembali ke tengah!
+      if (phase === 'paper_revealed' || phase === 'pulling_paper') {
+        setTimeout(() => {
+          setPhase('walking_to_center');
+        }, 400);
+      }
+    }
+  }, [autoCloseTrigger, onLetterClosed, phase]);
+
+  // Trigger pemutaran dialog tertentu dari luar (misal dialog 3 "Bagaimana Capy..." atau 5 "Kamu bisa...")
+  const prevDialogueTriggerRef = useRef(dialogueTriggerIndex);
+  useEffect(() => {
+    if (dialogueTriggerIndex !== undefined && dialogueTriggerIndex !== prevDialogueTriggerRef.current) {
+      prevDialogueTriggerRef.current = dialogueTriggerIndex;
+      playDialogueStep(dialogueTriggerIndex);
+    }
+  }, [dialogueTriggerIndex]);
+
+  // Trigger buka kembali surat dari luar
+  const prevReopenRef = useRef(reopenTrigger);
+  useEffect(() => {
+    if (reopenTrigger !== undefined && reopenTrigger !== prevReopenRef.current) {
+      prevReopenRef.current = reopenTrigger;
+      setIsLetterClosed(false);
+      setIsLetterCardVisible(true);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setIsDialoguePlaying(false);
+    }
+  }, [reopenTrigger]);
+
   const handleDialogueSkip = (e?: React.MouseEvent) => {
     e?.stopPropagation();
+    // Di dialog tanya happy (index 4) atau konfirmasi WA (index 5), tidak bisa di-skip klik biasa
+    if (currentDialogueIndex === 4 || currentDialogueIndex === 5) return;
+
     if (audioRef.current) {
       audioRef.current.pause();
     }
@@ -186,6 +340,11 @@ export function TaipeiBear({
     setIsLetterClosed(true);
     setIsLetterCardVisible(false);
     onLetterClosed?.();
+    if (phase === 'paper_revealed' || phase === 'pulling_paper') {
+      setTimeout(() => {
+        setPhase('walking_to_center');
+      }, 400);
+    }
   };
 
   const handleReopenLetter = () => {
@@ -254,7 +413,14 @@ export function TaipeiBear({
         wavingArmRef.current.rotation.z = 0.65 + Math.sin(time * 7.0) * 0.28;
       }
       if (rightArmRef.current) {
-        rightArmRef.current.rotation.z = -0.45 + Math.sin(time * 3.0) * 0.08;
+        if (isCarryingHeart) {
+          // Mendekap icon hati merah di depan dada dengan manis dan stabil
+          rightArmRef.current.rotation.x = THREE.MathUtils.lerp(rightArmRef.current.rotation.x, 0.45 + Math.sin(time * 2.5) * 0.04, dt * 6);
+          rightArmRef.current.rotation.y = THREE.MathUtils.lerp(rightArmRef.current.rotation.y, -0.35, dt * 6);
+          rightArmRef.current.rotation.z = THREE.MathUtils.lerp(rightArmRef.current.rotation.z, -0.65, dt * 6);
+        } else {
+          rightArmRef.current.rotation.z = -0.45 + Math.sin(time * 3.0) * 0.08;
+        }
       }
     }
 
@@ -296,10 +462,12 @@ export function TaipeiBear({
       modelRef.current.rotation.y = THREE.MathUtils.lerp(modelRef.current.rotation.y, -1.2, dt * 6);
       modelRef.current.position.y = Math.sin(time * 2.5) * 0.025;
 
-      const rightEdgeX = -1.25;
-      const totalWidth = 2.6;
-      const leftEdgeX = rightEdgeX - totalWidth; // -3.85
-      const centerX = (rightEdgeX + leftEdgeX) / 2; // -2.55
+      // Beruang di pullPosition (X = 3.15), jadi agar surat presisi di tengah layar (World X = 0.00 sejajar video):
+      // local centerX = 0.00 - 3.15 = -3.15
+      const centerX = -3.15;
+      const totalWidth = 2.7;
+      const rightEdgeX = centerX + totalWidth / 2; // -1.80
+      const leftEdgeX = centerX - totalWidth / 2; // -4.50
 
       if (phase === 'pulling_paper') {
         pullProgress.current = Math.min(1.0, pullProgress.current + dt * 0.65);
@@ -353,6 +521,47 @@ export function TaipeiBear({
         if (htmlLetterRef.current) {
           htmlLetterRef.current.position.x = centerX;
         }
+      }
+    }
+
+    // Pastikan jika surat dibuka saat beruang di tengah (phase dialogue), kartu surat tepat di tengah (0.15)
+    if (htmlLetterRef.current && (phase === 'dialogue' || phase === 'walking_to_center')) {
+      htmlLetterRef.current.position.x = 0.15;
+    }
+
+    // ── FASE 5: BERUANG BERJALAN KEMBALI KE TENGAH (SETELAH SURAT DITUTUP) ──
+    else if (phase === 'walking_to_center') {
+      const targetVec = new THREE.Vector3(...dialoguePosition);
+      const dist = currentPos.current.distanceTo(targetVec);
+
+      if (dist > 0.08) {
+        currentPos.current.lerp(targetVec, dt * 2.7);
+        rootGroupRef.current.position.copy(currentPos.current);
+
+        const walkCycle = time * 10.0;
+        const hop = Math.abs(Math.sin(walkCycle)) * 0.16;
+        modelRef.current.position.y = hop;
+        modelRef.current.rotation.z = Math.sin(walkCycle) * 0.1;
+
+        if (leftLegRef.current) leftLegRef.current.rotation.x = Math.sin(walkCycle) * 0.45 + 0.2;
+        if (rightLegRef.current) rightLegRef.current.rotation.x = -Math.sin(walkCycle) * 0.45;
+
+        // Menghadap ke arah kiri (balik melangkah menuju tengah)
+        modelRef.current.rotation.y = THREE.MathUtils.lerp(modelRef.current.rotation.y, -Math.PI * 0.45, dt * 8);
+
+        if (shadowRef.current) {
+          const s = 1.0 - hop * 1.5;
+          shadowRef.current.scale.set(s, s, s);
+        }
+      } else {
+        // Tiba di tengah panggung!
+        setPhase('dialogue');
+        rootGroupRef.current.position.copy(targetVec);
+        modelRef.current.rotation.y = -0.2;
+        // Beruang langsung mulai dialog 3 ("Bagaimana Capy, apakah kamu menikmati perjalanan di website ini? ✨")
+        setTimeout(() => {
+          playDialogueStep(3);
+        }, 500);
       }
     }
 
@@ -534,6 +743,24 @@ export function TaipeiBear({
               <meshStandardMaterial color={BEAR_BLACK} roughness={0.65} />
             </mesh>
           </group>
+
+          {/* Icon Hati Merah yang dibawa beruang saat dialog penutup */}
+          {isCarryingHeart && (
+            <group position={[0.36, 0.28, 0.24]} rotation={[-0.15, 0.4, 0.15]} scale={0.48}>
+              <mesh geometry={heartGeometry} castShadow>
+                <meshPhysicalMaterial
+                  color="#ff1744"
+                  emissive="#ff1744"
+                  emissiveIntensity={0.85}
+                  roughness={0.1}
+                  metalness={0.08}
+                  clearcoat={1.0}
+                  clearcoatRoughness={0.06}
+                />
+              </mesh>
+              <pointLight color="#ff1744" intensity={2.2} distance={2.5} />
+            </group>
+          )}
         </group>
 
         {/* 6. KAKI KIRI & KANAN */}
@@ -554,9 +781,13 @@ export function TaipeiBear({
       </group>
 
       {/* ── 💬 BALON PERCAKAPAN BERUANG (LEBAR & PAS DI ATAS KEPALA) ── */}
-      {currentDialogue && phase === 'dialogue' && (
+      {currentDialogue && (
         <Html
-          position={[0, 1.05, 0.1]}
+          position={
+            phase === 'pulling_paper' || phase === 'paper_revealed'
+              ? [-0.85, 1.15, 0.1]
+              : [0, 1.05, 0.1]
+          }
           center
           distanceFactor={4.2}
           style={{ pointerEvents: 'auto', userSelect: 'none', zIndex: 100 }}
@@ -580,7 +811,7 @@ export function TaipeiBear({
               color: '#ffffff',
               fontFamily: "'Quicksand', 'Outfit', sans-serif",
               boxShadow: '0 8px 25px rgba(0, 0, 0, 0.75), 0 0 18px rgba(56, 189, 248, 0.45)',
-              cursor: 'pointer',
+              cursor: currentDialogueIndex === 4 || currentDialogueIndex === 5 ? 'default' : 'pointer',
               userSelect: 'none',
               animation: 'fadeUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
               textAlign: 'center',
@@ -594,14 +825,26 @@ export function TaipeiBear({
               </span>
               <span style={{
                 fontSize: '0.62rem',
-                color: isDialoguePlaying ? '#2ed573' : '#ffd166',
+                color: currentDialogueIndex === 4
+                  ? '#ff7675'
+                  : currentDialogueIndex === 5
+                    ? '#34d399'
+                    : isDialoguePlaying
+                      ? '#2ed573'
+                      : '#ffd166',
                 fontWeight: 700,
                 background: 'rgba(0, 0, 0, 0.5)',
                 padding: '0.1rem 0.45rem',
                 borderRadius: '9999px',
                 border: '1px solid rgba(255,255,255,0.15)'
               }}>
-                {isDialoguePlaying ? '🎙️ Bicara' : 'Klik lanjut ⏩'}
+                {currentDialogueIndex === 4
+                  ? '💖 Klik Icon Hati!'
+                  : currentDialogueIndex === 5
+                    ? '💬 Konfirmasi WhatsApp'
+                    : isDialoguePlaying
+                      ? '🎙️ Bicara'
+                      : 'Klik lanjut ⏩'}
               </span>
             </div>
 
@@ -616,16 +859,49 @@ export function TaipeiBear({
               {currentDialogue.text}
             </div>
 
-            {/* Indikator progress dialog */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '0.35rem' }}>
-              {BEAR_DIALOGUES.map((_, i) => (
-                <div
-                  key={i}
+            {/* Tombol Konfirmasi "Iyaa, sudah" khusus dialog konfirmasi WA */}
+            {currentDialogueIndex === 5 && (
+              <div style={{ marginTop: '0.6rem' }}>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playDialogueStep(6);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                   style={{
-                    width: i === currentDialogueIndex ? '16px' : '5px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    border: '1.5px solid #a7f3d0',
+                    color: '#ffffff',
+                    borderRadius: '9999px',
+                    padding: '0.4rem 1.35rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.55), 0 0 10px rgba(5, 150, 105, 0.35)',
+                    transition: 'transform 0.15s ease',
+                  }}
+                >
+                  <span>Iyaa, sudah</span>
+                  <span>🥰✨</span>
+                </button>
+              </div>
+            )}
+
+            {/* Indikator progress dialog */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '4px', marginTop: '0.4rem' }}>
+              {(currentDialogueIndex < 3 ? [0, 1, 2] : currentDialogueIndex < 5 ? [3, 4] : [5, 6]).map((idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    width: idx === currentDialogueIndex ? '16px' : '5px',
                     height: '3.5px',
                     borderRadius: '9999px',
-                    backgroundColor: i === currentDialogueIndex ? '#38bdf8' : 'rgba(255,255,255,0.25)',
+                    backgroundColor: idx === currentDialogueIndex ? '#38bdf8' : 'rgba(255,255,255,0.25)',
                     transition: 'all 0.3s ease'
                   }}
                 />
@@ -637,7 +913,7 @@ export function TaipeiBear({
               style={{
                 position: 'absolute',
                 bottom: '-7px',
-                left: '50%',
+                left: phase === 'pulling_paper' || phase === 'paper_revealed' ? '78%' : '50%',
                 transform: 'translateX(-50%)',
                 width: 0,
                 height: 0,
@@ -651,77 +927,97 @@ export function TaipeiBear({
       )}
 
       {/* ── 📜 3D KERTAS MEMANJANG: HANYA TAMPIL SAAT SURAT DIBUKA (!isLetterClosed) ── */}
-      {(phase === 'pulling_paper' || phase === 'paper_revealed') && !isLetterClosed && (
+      {!isLetterClosed && (
         <group position={[0, 0.35, 0.35]}>
-          {/* Batang Gulungan Emas Kanan (Berjarak 1.25 unit di sebelah kiri beruang, TIDAK MENUTUPI BERUANG) */}
-          <mesh position={[-1.25, 0, 0]}>
-            <cylinderGeometry args={[0.035, 0.035, 1.25, 16]} />
-            <meshStandardMaterial color="#f1c40f" metalness={0.85} roughness={0.2} />
-          </mesh>
-          <mesh position={[-1.25, 0.65, 0]}>
-            <sphereGeometry args={[0.055, 16, 16]} />
-            <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
-          </mesh>
-          <mesh position={[-1.25, -0.65, 0]}>
-            <sphereGeometry args={[0.055, 16, 16]} />
-            <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
-          </mesh>
+          {/* Batang Gulungan Emas Kanan & Kiri (HANYA tampil saat menarik dari sisi kanan) */}
+          {phase !== 'dialogue' && phase !== 'walking_to_center' && (
+            <>
+              {/* Batang Gulungan Emas Kanan */}
+              <mesh position={[-1.80, 0, 0]}>
+                <cylinderGeometry args={[0.035, 0.035, 1.25, 16]} />
+                <meshStandardMaterial color="#f1c40f" metalness={0.85} roughness={0.2} />
+              </mesh>
+              <mesh position={[-1.80, 0.65, 0]}>
+                <sphereGeometry args={[0.055, 16, 16]} />
+                <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
+              </mesh>
+              <mesh position={[-1.80, -0.65, 0]}>
+                <sphereGeometry args={[0.055, 16, 16]} />
+                <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
+              </mesh>
 
-          {/* Batang Gulungan Emas Kiri (Leading Edge yang Bergerak ke Kiri) */}
-          <group ref={leftRodRef} position={[-3.85, 0, 0]}>
-            <mesh>
-              <cylinderGeometry args={[0.035, 0.035, 1.25, 16]} />
-              <meshStandardMaterial color="#f1c40f" metalness={0.85} roughness={0.2} />
-            </mesh>
-            <mesh position={[0, 0.65, 0]}>
-              <sphereGeometry args={[0.055, 16, 16]} />
-              <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
-            </mesh>
-            <mesh position={[0, -0.65, 0]}>
-              <sphereGeometry args={[0.055, 16, 16]} />
-              <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
-            </mesh>
-          </group>
+              {/* Batang Gulungan Emas Kiri */}
+              <group ref={leftRodRef} position={[-4.50, 0, 0]}>
+                <mesh>
+                  <cylinderGeometry args={[0.035, 0.035, 1.25, 16]} />
+                  <meshStandardMaterial color="#f1c40f" metalness={0.85} roughness={0.2} />
+                </mesh>
+                <mesh position={[0, 0.65, 0]}>
+                  <sphereGeometry args={[0.055, 16, 16]} />
+                  <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
+                </mesh>
+                <mesh position={[0, -0.65, 0]}>
+                  <sphereGeometry args={[0.055, 16, 16]} />
+                  <meshStandardMaterial color="#f39c12" metalness={0.9} roughness={0.2} />
+                </mesh>
+              </group>
 
-          {/* Lembaran Kertas 3D Horizontal (HANYA saat menarik pertama kali sebelum kartu HTML tampil) */}
-          {phase === 'pulling_paper' && !isLetterCardVisible && (
-            <mesh ref={paperMeshRef} position={[-2.55, 0, -0.01]} receiveShadow>
-              <planeGeometry args={[2.6, 1.2]} />
-              <meshStandardMaterial color="#fffdf8" roughness={0.75} />
-            </mesh>
+              {/* Lembaran Kertas 3D Horizontal */}
+              {phase === 'pulling_paper' && !isLetterCardVisible && (
+                <mesh ref={paperMeshRef} position={[-3.15, 0, -0.01]} receiveShadow>
+                  <planeGeometry args={[2.7, 1.2]} />
+                  <meshStandardMaterial color="#fffdf8" roughness={0.75} />
+                </mesh>
+              )}
+            </>
           )}
 
-          {/* ── TAMPILAN SURAT UCAPAN ULANG TAHUN DENGAN TOMBOL CLOSE ✕ ── */}
-          <group ref={htmlLetterRef} position={[-2.55, 0, 0.04]}>
+          {/* ── TAMPILAN SURAT UCAPAN ULANG TAHUN DENGAN TOMBOL CLOSE ✕ (PRESISI DI TENGAH LAYAR) ── */}
+          <group
+            ref={htmlLetterRef}
+            position={[phase === 'dialogue' || phase === 'walking_to_center' ? 0.15 : -3.15, 0, 0.04]}
+          >
             {isLetterCardVisible && (
-              <Html center distanceFactor={4.2}>
+              <Html center distanceFactor={4.2} style={{ pointerEvents: 'auto', zIndex: 100 }}>
                 <div
                   onPointerDown={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                   onTouchStart={(e) => e.stopPropagation()}
                   style={{
                     width: 'min(92vw, 520px)',
-                    maxHeight: 'min(76vh, 520px)',
+                    maxHeight: 'clamp(320px, 70vh, 520px)',
                     overflowY: 'auto',
                     WebkitOverflowScrolling: 'touch',
                     background: 'linear-gradient(145deg, #fffdf8 0%, #fef7ed 100%)',
                     borderRadius: '16px',
                     border: '3px solid #d4af37',
-                    padding: 'clamp(0.75rem, 2.5vw, 1.0rem) clamp(0.85rem, 3vw, 1.25rem)',
+                    padding: 'clamp(0.65rem, 2.5vw, 1.0rem) clamp(0.75rem, 3vw, 1.25rem)',
                     boxShadow: '0 20px 50px rgba(0, 0, 0, 0.85), 0 0 40px rgba(241, 196, 15, 0.45)',
                     color: '#2c3e50',
                     fontFamily: 'Georgia, serif',
                     userSelect: 'none',
                     animation: 'fadeIn 0.4s ease',
                     position: 'relative',
+                    pointerEvents: 'auto',
                   }}
                 >
                   {/* Tombol Close (✕) di Pojok Kanan Atas */}
                   <button
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onTouchStart={(e) => e.stopPropagation()}
+                    type="button"
+                    title="Tutup Surat"
+                    aria-label="Tutup Surat"
                     onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleCloseLetter();
+                    }}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleCloseLetter();
+                    }}
+                    onTouchEnd={(e) => {
+                      e.preventDefault();
                       e.stopPropagation();
                       handleCloseLetter();
                     }}
@@ -729,22 +1025,22 @@ export function TaipeiBear({
                       position: 'absolute',
                       top: '8px',
                       right: '10px',
-                      zIndex: 25,
-                      width: '32px',
-                      height: '32px',
+                      zIndex: 999,
+                      width: '36px',
+                      height: '36px',
                       borderRadius: '50%',
-                      background: 'rgba(231, 76, 60, 0.95)',
+                      background: 'rgba(231, 76, 60, 0.98)',
                       border: '2px solid #ffffff',
                       color: '#ffffff',
-                      fontSize: '14px',
+                      fontSize: '15px',
                       fontWeight: 900,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                      pointerEvents: 'auto',
                     }}
-                    title="Tutup Surat"
                   >
                     ✕
                   </button>
@@ -846,7 +1142,7 @@ export function TaipeiBear({
 
                   {/* Isi Pesan Romantis (Teks Asli dengan Emot Romantis) */}
                   <div style={{
-                    fontSize: '0.80rem',
+                    fontSize: 'clamp(0.73rem, 2.1vw, 0.80rem)',
                     lineHeight: '1.6',
                     color: '#3f3a36',
                     textAlign: 'justify',
@@ -913,14 +1209,27 @@ export function TaipeiBear({
                       color: '#92400e',
                       textAlign: 'center',
                     }}>
-                      💡 <strong>Selesai membaca?</strong> Klik tombol <strong style={{ color: '#dc2626' }}>✕ Tutup Surat</strong> untuk membuka pesawat perjalanan selanjutnya! ✈️
+                      {isFlatLetterMode ? (
+                        <>💡 Klik tombol <strong style={{ color: '#dc2626' }}>✕ Tutup Surat</strong> untuk kembali ke panggung! ✨</>
+                      ) : (
+                        <>💡 <strong>Selesai membaca?</strong> Dengarkan pesan suara mas atau klik <strong style={{ color: '#dc2626' }}>✕ Tutup Surat</strong>! ✈️</>
+                      )}
                     </div>
 
                     <button
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
+                      type="button"
                       onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCloseLetter();
+                      }}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleCloseLetter();
+                      }}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         handleCloseLetter();
                       }}
@@ -929,18 +1238,19 @@ export function TaipeiBear({
                         color: '#ffffff',
                         border: 'none',
                         borderRadius: '9999px',
-                        padding: '0.38rem 1.0rem',
-                        fontSize: '0.75rem',
+                        padding: '0.45rem 1.2rem',
+                        fontSize: '0.78rem',
                         fontWeight: 800,
                         cursor: 'pointer',
                         boxShadow: '0 4px 12px rgba(214, 48, 49, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.35rem',
+                        pointerEvents: 'auto',
                       }}
                     >
                       <span>✕</span>
-                      <span>Tutup Surat & Buka Pesawat ✈️</span>
+                      <span>{isFlatLetterMode ? 'Tutup Surat' : 'Tutup Surat & Buka Pesawat ✈️'}</span>
                     </button>
                   </div>
                 </div>

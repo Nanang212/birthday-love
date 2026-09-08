@@ -315,27 +315,29 @@ export function PhotoAlbum3D({ isOpen, onClose }: PhotoAlbum3DProps) {
               WebkitBackdropFilter: 'blur(16px)',
               border: '1.5px solid rgba(254, 202, 87, 0.8)',
               borderRadius: '9999px',
-              padding: '0.35rem 1.25rem',
+              padding: '0.35rem clamp(0.7rem, 2.5vw, 1.25rem)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.65rem',
+              justifyContent: 'center',
+              gap: '0.5rem',
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(254, 202, 87, 0.35)',
-              whiteSpace: 'nowrap',
+              maxWidth: '92vw',
             }}
           >
-            <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#feca57', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <span style={{ fontSize: 'clamp(0.72rem, 2.2vw, 0.88rem)', fontWeight: 700, color: '#feca57', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <span>📸</span>
               <span>{currentPhoto.caption}</span>
             </span>
             <span
               style={{
-                fontSize: '0.72rem',
+                fontSize: 'clamp(0.65rem, 1.8vw, 0.72rem)',
                 color: '#94a3b8',
                 background: 'rgba(255, 255, 255, 0.12)',
-                padding: '0.15rem 0.55rem',
+                padding: '0.12rem 0.45rem',
                 borderRadius: '9999px',
                 fontWeight: 700,
+                flexShrink: 0,
               }}
             >
               {activeIndex + 1} / {total}
@@ -451,12 +453,12 @@ export function PhotoAlbum3D({ isOpen, onClose }: PhotoAlbum3DProps) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.45rem',
-                padding: '0.4rem 1.35rem',
+                padding: '0.4rem clamp(0.75rem, 3vw, 1.35rem)',
                 borderRadius: '9999px',
                 border: '1.5px solid rgba(255, 255, 255, 0.9)',
                 background: 'linear-gradient(135deg, #10b981, #059669)',
                 color: '#ffffff',
-                fontSize: '0.84rem',
+                fontSize: 'clamp(0.74rem, 2.2vw, 0.84rem)',
                 fontWeight: 800,
                 cursor: 'pointer',
                 boxShadow: '0 6px 20px rgba(16, 185, 129, 0.6), 0 0 15px rgba(52, 211, 153, 0.5)',

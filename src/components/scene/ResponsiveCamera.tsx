@@ -31,10 +31,18 @@ export function ResponsiveCamera({
     const requiredZ = targetWidth / (2 * halfFovTan * aspect);
     const newZ = THREE.MathUtils.clamp(Math.max(baseZ, requiredZ), minZ, maxZ);
 
-    // On narrow screens (mobile portrait), slightly adjust Y so lower planes stay comfortably in view
+    // On narrow screens (mobile portrait), shift camera down so lower plane
+    // objects (airplane, Capy on the ground) stay comfortably visible.
     let newY = baseY;
-    if (aspect < 0.7) {
-      newY = baseY - 0.2;
+    if (aspect < 0.55) {
+      // Very narrow phone (e.g. 375px wide, 812px tall)
+      newY = baseY - 0.45;
+    } else if (aspect < 0.7) {
+      // Normal portrait phone (e.g. 390×844)
+      newY = baseY - 0.25;
+    } else if (aspect < 0.85) {
+      // Wide phone / small tablet portrait (e.g. 768×1024)
+      newY = baseY - 0.12;
     }
 
     camera.position.z = newZ;

@@ -618,12 +618,13 @@
   .dialogue-text {
     font-size: 0.92rem;
     line-height: 1.5;
+    min-height: 2em;
   }
 
   .btn-continue {
     padding: 0.5rem 1rem;
     font-size: 0.82rem;
-    min-height: 38px;
+    min-height: 44px; /* Touch target */
   }
 
   .memory-thumb {
@@ -634,8 +635,10 @@
   .audio-toggle {
     top: calc(var(--space-sm) + env(safe-area-inset-top, 0px));
     right: calc(var(--space-sm) + env(safe-area-inset-right, 0px));
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
   }
 
   .capy-dialogue {
@@ -646,6 +649,121 @@
   .birthday-card {
     padding: 1.25rem 1rem;
     border-radius: var(--radius-md);
+    max-height: 88vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .birthday-title {
+    font-size: clamp(2rem, 7vw, 3rem);
+    margin-bottom: var(--space-md);
+  }
+
+  .birthday-name {
+    font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+    margin-bottom: var(--space-lg);
+  }
+
+  .birthday-message p {
+    font-size: 0.88rem;
+    line-height: 1.7;
+  }
+
+  .birthday-closing {
+    font-size: 1.4rem;
+    margin-top: var(--space-lg);
+  }
+
+  /* World indicator — smaller on mobile */
+  .world-indicator {
+    top: calc(var(--space-sm) + env(safe-area-inset-top, 0px));
+  }
+
+  .world-indicator-pill {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.68rem;
+  }
+
+  /* Journey/memory destination buttons */
+  .journey-destinations {
+    bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px));
+    gap: 0.35rem;
+    padding: 0 0.75rem;
+  }
+
+  .destination-btn {
+    padding: 0.4rem 0.65rem;
+    font-size: 0.7rem;
+  }
+
+  .destination-btn .flag {
+    font-size: 1.25rem;
+  }
+
+  /* Memories grid — smaller thumbnails */
+  .memories-grid {
+    bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+    gap: var(--space-sm);
+    max-width: 98vw;
+  }
+
+  .memory-modal {
+    border-radius: var(--radius-md);
+    max-height: 96vh;
+  }
+
+  .memory-content {
+    padding: var(--space-md);
+  }
+}
+
+/* Extra small phones (< 390px) */
+@media (max-width: 390px) {
+  .dialogue-text {
+    font-size: 0.86rem;
+  }
+
+  .dialogue-name {
+    font-size: 0.68rem;
+  }
+
+  .memory-thumb {
+    width: 52px;
+    height: 52px;
+  }
+
+  .btn-primary {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+  }
+
+  .birthday-card {
+    padding: 1rem 0.75rem;
+  }
+}
+
+/* ---- Miss-click Guide Cursor & Balloon Animations ---- */
+@keyframes guideGlide {
+  0% {
+    transform: translate(var(--startX), var(--startY)) scale(1.18);
+    opacity: 1;
+  }
+  75% {
+    transform: translate(var(--targetX), var(--targetY)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--targetX), var(--targetY)) scale(0.95);
+    opacity: 0.85;
+  }
+}
+
+@keyframes bounceBalloon {
+  0% {
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
+    transform: translateX(-50%) translateY(-7px);
   }
 }
 

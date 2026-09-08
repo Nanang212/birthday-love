@@ -11,6 +11,7 @@ import { Capy } from '../../components/capybara/Capy';
 import { useStory } from '../../hooks/useStory';
 import { DialogueController } from '../../components/dialogue/DialogueController';
 import { bollywoodDialogues } from '../../data/dialogues';
+import { ResponsiveCamera } from '../../components/scene/ResponsiveCamera';
 
 function BollywoodScene({ capyDancing, onCapyClick }: { capyDancing: boolean; onCapyClick: () => void }) {
   const archRef = useRef<THREE.Group>(null);
@@ -151,6 +152,7 @@ export function BollywoodWorld() {
     <>
       <div className="scene-container">
         <Canvas camera={{ position: [0, 1, 5], fov: 58 }} dpr={[1, 1.5]}>
+          <ResponsiveCamera baseY={1} baseZ={5} targetWidth={8.0} />
           <BollywoodScene capyDancing={phase === 'dance'} onCapyClick={clickCapy} />
         </Canvas>
       </div>

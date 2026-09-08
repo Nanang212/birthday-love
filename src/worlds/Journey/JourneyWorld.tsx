@@ -17,6 +17,7 @@ import { Stars } from '@react-three/drei';
 import { Capy } from '../../components/capybara/Capy';
 import { TravelAirplane3D } from '../../components/scene/TravelAirplane3D';
 import { TaipeiBear } from '../../components/scene/TaipeiBear';
+import { ThreeLoveHeart3D } from '../../components/scene/ThreeLoveHeart3D';
 import { Fireworks } from '../../components/scene/Fireworks';
 import { RomanticTaipeiDecor } from '../../components/scene/RomanticTaipeiDecor';
 import { ResponsiveCamera } from '../../components/scene/ResponsiveCamera';
@@ -96,6 +97,22 @@ export function JourneyWorld() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(false);
 
+  // State untuk alur Voice Note selesai -> Tanya Happy -> Icon Love 3D -> WhatsApp
+  const [autoCloseTrigger, setAutoCloseTrigger] = useState(0);
+  const [reopenTrigger, setReopenTrigger] = useState(0);
+  const [dialogueTriggerIndex, setDialogueTriggerIndex] = useState<number | undefined>(undefined);
+  const [isLovePromptActive, setIsLovePromptActive] = useState(false);
+  const [isHeartFilled, setIsHeartFilled] = useState(false);
+  const [isFlatLetterMode, setIsFlatLetterMode] = useState(false);
+  const [missClicksCount, setMissClicksCount] = useState(0);
+  const [guideCursor, setGuideCursor] = useState<{
+    startX: number;
+    startY: number;
+    targetX: number;
+    targetY: number;
+    key: number;
+  } | null>(null);
+
   // Guard agar Capy hanya otomatis berjalan ke pojok kiri satu kali di awal
   const hasAutoMovedCapy = useRef(false);
 
@@ -120,8 +137,11 @@ export function JourneyWorld() {
         setIsVoicePlaying(false);
         // Naikkan kembali volume petasan perlahan setelah rekaman ucapan selesai
         if (videoRef.current && !videoRef.current.muted) {
-          videoRef.current.volume = 0.55;
+          videoRef.current.volume = 0.45;
         }
+        // Otomatis menutup surat ucapan di TaipeiBear
+        // Beruang akan otomatis berjalan ke tengah dan memutar dialog bertanya happy!
+        setAutoCloseTrigger((prev) => prev + 1);
       };
       audio.onerror = () => {
         if (isLetterClosedRef.current) return;
@@ -130,7 +150,11 @@ export function JourneyWorld() {
         fallback.volume = 1.0;
         fallback.onplay = () => setIsVoicePlaying(true);
         fallback.onpause = () => setIsVoicePlaying(false);
-        fallback.play().catch(() => {});
+        fallback.onended = () => {
+          setIsVoicePlaying(false);
+          setAutoCloseTrigger((prev) => prev + 1);
+        };
+        fallback.play().catch(() => { });
         ucapanAudioRef.current = fallback;
       };
       ucapanAudioRef.current = audio;
@@ -152,7 +176,7 @@ export function JourneyWorld() {
           resumeOnClickRef.current = null;
           return;
         }
-        ucapanAudioRef.current?.play().catch(() => {});
+        ucapanAudioRef.current?.play().catch(() => { });
         window.removeEventListener('click', resumeOnClick);
         resumeOnClickRef.current = null;
       };
@@ -169,7 +193,7 @@ export function JourneyWorld() {
     }
     if (ucapanAudioRef.current.paused) {
       if (videoRef.current) videoRef.current.volume = 0.18;
-      ucapanAudioRef.current.play().catch(() => {});
+      ucapanAudioRef.current.play().catch(() => { });
     } else {
       ucapanAudioRef.current.pause();
     }
@@ -237,10 +261,9 @@ export function JourneyWorld() {
     }, 3000);
   }, [playUcapanVoice]);
 
-  // Trigger saat surat ditutup: HENTIKAN TOTAL suara ucapan & timer apapun, pesawat siap ditampilkan
+  // Trigger saat surat ditutup: HENTIKAN TOTAL suara ucapan & timer apapun
   const handleLetterClosed = useCallback(() => {
     isLetterClosedRef.current = true;
-    setIsNextFlightReady(true);
     if (ucapanTimerRef.current) {
       clearTimeout(ucapanTimerRef.current);
       ucapanTimerRef.current = null;
@@ -260,14 +283,101 @@ export function JourneyWorld() {
     }
   }, []);
 
-  // Trigger saat surat dibuka kembali
+  // Trigger saat surat dibuka kembali: Buka surat di TaipeiBear, selang 3 detik putar VN, setelah VN selesai otomatis tutup
   const handleReopenLetterInJourney = useCallback(() => {
     isLetterClosedRef.current = false;
+    setReopenTrigger((prev) => prev + 1);
     if (videoRef.current) {
       videoRef.current.volume = 0.18;
     }
-    playUcapanVoice();
+    if (ucapanTimerRef.current) clearTimeout(ucapanTimerRef.current);
+    ucapanTimerRef.current = setTimeout(() => {
+      if (isLetterClosedRef.current) return;
+      playUcapanVoice();
+    }, 3000);
   }, [playUcapanVoice]);
+
+  // Handler callback saat dialog beruang selesai
+  const handleBearDialogueFinished = useCallback((index: number) => {
+    if (index === 4) {
+      // Selesai dialog "Dan apakah kamu happy di hari yang spesial ini?"
+      // Munculkan icon Love 3D Three.js di panggung!
+      setIsLovePromptActive(true);
+      setMissClicksCount(0);
+    } else if (index === 5) {
+      // Selesai dialog pamitan / pilihan baca lagi atau naik pesawat
+      setIsNextFlightReady(true);
+    }
+  }, []);
+
+  // Handler saat cairan merah Love 3D telah terisi penuh (100%)
+  const handleHeartFilled = useCallback(() => {
+    setIsHeartFilled(true);
+    setIsLovePromptActive(false);
+    setGuideCursor(null);
+    setIsFlatLetterMode(true);
+    setIsNextFlightReady(true);
+
+    // Otomatis buka WhatsApp ke nomer 085790663367 dengan pesan bahagia
+    const phoneNumber = '6285790663367';
+    const message = 'Happy bangett sayang 🥰❤️✨';
+    const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
+
+    // Beruang langsung melanjutkan dialog ke-6 sambil mendekap icon love merah!
+    setTimeout(() => {
+      setDialogueTriggerIndex(5);
+    }, 500);
+
+    // Saat user kembali ke website (window focus / visibility visible), pastikan dialog 5 tetap terpicu jika tertunda
+    let hasTriggeredReturnDialogue = false;
+    const triggerReturnDialogue = () => {
+      if (hasTriggeredReturnDialogue) return;
+      hasTriggeredReturnDialogue = true;
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      setDialogueTriggerIndex(5);
+    };
+
+    const onFocus = () => triggerReturnDialogue();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        triggerReturnDialogue();
+      }
+    };
+
+    window.addEventListener('focus', onFocus, { once: true });
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }, []);
+
+  // Listener deteksi klik di luar icon Love saat diminta klik love
+  useEffect(() => {
+    if (!isLovePromptActive || isHeartFilled) return;
+
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      // Jangan hitung miss-click jika mengklik icon love atau balon petunjuknya
+      if (target?.closest?.('.love-heart-container') || target?.closest?.('#btn-love-heart')) {
+        return;
+      }
+
+      // Posisi icon Love 3D di dekat tangan kanan Taipei Bear
+      const targetX = window.innerWidth * 0.55;
+      const targetY = window.innerHeight * 0.74;
+
+      setMissClicksCount((prev) => prev + 1);
+      setGuideCursor({
+        startX: e.clientX,
+        startY: e.clientY,
+        targetX,
+        targetY,
+        key: Date.now(),
+      });
+    };
+
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, [isLovePromptActive, isHeartFilled]);
 
   // Trigger Capy keluar dari Pesawat Kedatangan ke kebun
   const handleTriggerExit = (point?: [number, number, number]) => {
@@ -378,7 +488,23 @@ export function JourneyWorld() {
             onReopenLetter={handleReopenLetterInJourney}
             isVoicePlaying={isVoicePlaying}
             onToggleVoice={toggleVoiceAudio}
+            autoCloseTrigger={autoCloseTrigger}
+            reopenTrigger={reopenTrigger}
+            dialogueTriggerIndex={dialogueTriggerIndex}
+            onDialogueFinished={handleBearDialogueFinished}
+            isFlatLetterMode={isFlatLetterMode}
+            isCarryingHeart={isHeartFilled}
           />
+
+          {/* Icon Love 3D Three.js: Muncul saat diminta klik cinta (sebelum diklik & terisi) */}
+          {(isLovePromptActive && !isHeartFilled) && (
+            <ThreeLoveHeart3D
+              position={[0.48, -1.20, 1.1]}
+              scale={0.36}
+              isFilled={isHeartFilled}
+              onFilled={handleHeartFilled}
+            />
+          )}
 
           {/* Pesawat 3D: "✈️ Perjalanan Selanjutnya" — Siap setelah ucapan surat terbuka */}
           {(isNextFlightReady || isReturning) && (
@@ -419,8 +545,15 @@ export function JourneyWorld() {
           {/* Invisible Click Plane untuk mengarahkan Capy jalan santai di kebun */}
           <mesh
             position={[0, -1.0, 0]}
-            visible={false}
             onPointerDown={(e) => {
+              if (isLovePromptActive) return;
+              const p = e.point;
+              const clampedX = Math.min(Math.max(p.x, -3.6), 3.6);
+              const clampedY = Math.min(Math.max(p.y, -1.8), -1.0);
+              handleTriggerExit([clampedX, clampedY, 0.8]);
+            }}
+            onClick={(e) => {
+              if (isLovePromptActive) return;
               const p = e.point;
               const clampedX = Math.min(Math.max(p.x, -3.6), 3.6);
               const clampedY = Math.min(Math.max(p.y, -1.8), -1.0);
@@ -428,7 +561,7 @@ export function JourneyWorld() {
             }}
           >
             <planeGeometry args={[25, 12]} />
-            <meshBasicMaterial transparent opacity={0} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
         </Canvas>
       </div>
@@ -439,7 +572,7 @@ export function JourneyWorld() {
         top: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
         left: 0,
         right: 0,
-        height: 'clamp(170px, 31vh, 300px)',
+        height: 'clamp(130px, 26vh, 280px)',
         zIndex: 5,
         display: 'flex',
         alignItems: 'center',
@@ -520,7 +653,7 @@ export function JourneyWorld() {
                 maxWidth: '420px',
                 lineHeight: 1.5,
               }}>
-                Capy telah tiba di kota Taipei yang indah bersama lentera malam... 
+                Capy telah tiba di kota Taipei yang indah bersama lentera malam...
                 Dengarkan sambutan manis dari <strong>Bravo si Beruang Taipei</strong>! 🐻💌
               </p>
             </div>
@@ -566,7 +699,7 @@ export function JourneyWorld() {
         {/* World indicator */}
         <div className="world-indicator">
           <div className="world-indicator-pill">
-            {isFireworksActive ? '🎆 Taipei: Pesta Kembang Api Ulang Tahun' : '🏮 Taipei: Malam Romantis Lentera'}
+            {isFireworksActive ? 'Taipei: Pesta Kembang Api Ulang Tahun' : '🏮 Taipei: Malam Romantis Lentera'}
           </div>
         </div>
 
@@ -577,16 +710,15 @@ export function JourneyWorld() {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 25,
-          maxWidth: 'min(92vw, 620px)',
-          width: 'max-content',
+          width: 'min(94vw, 620px)',
           background: 'rgba(7, 11, 22, 0.94)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           border: '1px solid rgba(240, 194, 127, 0.5)',
-          borderRadius: '9999px',
-          padding: '0.45rem clamp(0.75rem, 2.5vw, 1.3rem)',
-          fontSize: 'clamp(0.72rem, 2.2vw, 0.86rem)',
-          lineHeight: '1.35',
+          borderRadius: '16px',
+          padding: '0.5rem clamp(0.75rem, 2.5vw, 1.3rem)',
+          fontSize: 'clamp(0.68rem, 2.2vw, 0.86rem)',
+          lineHeight: '1.45',
           color: '#ffffff',
           display: 'flex',
           alignItems: 'center',
@@ -615,6 +747,14 @@ export function JourneyWorld() {
               <>
                 Capy sedang bersiap naik ke pesawat... ✈️
               </>
+            ) : isLovePromptActive ? (
+              <>
+                💖 <strong style={{ color: '#ff4d6d' }}>Bravo bertanya: Apakah kamu happy?</strong> Klik <strong style={{ color: '#ff4d6d' }}>Icon Cinta 3D</strong> di depan untuk mengirim pesan cinta via WhatsApp! 🥰💌
+              </>
+            ) : isHeartFilled ? (
+              <>
+                💌 <strong style={{ color: '#ffd166' }}>Pesan telah terkirim!</strong> Kamu bisa baca pesan lagi di pojok kanan ↘ atau naik pesawat di pojok kiri ↙! ✈️✨
+              </>
             ) : isBearActive && !isFireworksActive ? (
               <>
                 🐻 <strong style={{ color: '#ffd166' }}>Bravo si Beruang Taipei</strong> sedang menyapa Capy! Dengarkan pesan spesialnya... 💌
@@ -625,7 +765,7 @@ export function JourneyWorld() {
               </>
             ) : isFireworksActive ? (
               <>
-                🎆 <strong style={{ color: '#ffd166' }}>Pesta Kembang Api Dimulai!</strong> Baca pesan di surat cinta... Klik <strong style={{ color: '#ff7675' }}>✕ Tutup Surat</strong> jika sudah selesai untuk membuka pesawat! ✈️
+                🎆 <strong style={{ color: '#ffd166' }}>Pesta Kembang Api Dimulai!</strong> Baca pesan di surat cinta... Dengarkan pesan suara mas sampai selesai untuk lanjut! 🎙️✨
               </>
             ) : (
               <>
@@ -636,6 +776,119 @@ export function JourneyWorld() {
           </span>
         </div>
       </div>
+
+      {/* 4. Animated Simulated Cursor Guide & "Harus happy yaa!" Balloon */}
+      {isLovePromptActive && guideCursor && (
+        <div
+          key={guideCursor.key}
+          style={{
+            position: 'fixed',
+            left: 0,
+            top: 0,
+            pointerEvents: 'none',
+            zIndex: 9999,
+            animation: 'guideGlide 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards',
+            '--startX': `${guideCursor.startX}px`,
+            '--startY': `${guideCursor.startY}px`,
+            '--targetX': `${guideCursor.targetX}px`,
+            '--targetY': `${guideCursor.targetY}px`,
+          } as React.CSSProperties}
+        >
+          <div style={{ position: 'relative' }}>
+            <div
+              style={{
+                fontSize: '2.4rem',
+                filter: 'drop-shadow(0 4px 12px rgba(255, 77, 109, 0.85))',
+                transform: 'translate(-25%, -25%) rotate(-15deg)',
+              }}
+            >
+              👉
+            </div>
+
+            {/* Balon pesan "Harus happy yaa! 🥺💖✨" jika >= 3 kali klik yang lain */}
+            {missClicksCount >= 3 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '46px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(135deg, #ff4d6d, #e63946)',
+                  color: '#ffffff',
+                  padding: '0.45rem 1.05rem',
+                  borderRadius: '16px',
+                  border: '2px solid #ffffff',
+                  boxShadow: '0 8px 25px rgba(230, 57, 70, 0.75), 0 0 16px rgba(255, 255, 255, 0.85)',
+                  fontSize: '0.85rem',
+                  fontWeight: 800,
+                  whiteSpace: 'nowrap',
+                  animation: 'bounceBalloon 0.8s infinite alternate ease-in-out',
+                }}
+              >
+                Harus happy yaa! 🥺💖✨
+                <div
+                  style={{
+                    position: 'absolute',
+                    bottom: '-7px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 0,
+                    height: 0,
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderTop: '7px solid #e63946',
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5. Tombol Buka Pesan Pembuat Website (Pojok Kanan Bawah) */}
+      {(isHeartFilled || dialogueTriggerIndex === 5) && !isReturning && !isAirplaneFlying && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 'calc(1.4rem + env(safe-area-inset-bottom, 0px))',
+            right: 'clamp(1rem, 3.5vw, 2.5rem)',
+            zIndex: 30,
+            display: 'flex',
+            gap: '0.75rem',
+            alignItems: 'center',
+          }}
+        >
+          <button
+            id="btn-reopen-letter"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReopenLetterInJourney();
+            }}
+            style={{
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96))',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '2px solid #d4af37',
+              color: '#fef3c7',
+              borderRadius: '9999px',
+              padding: '0.52rem 1.4rem',
+              fontSize: 'clamp(0.78rem, 2.3vw, 0.92rem)',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.7), 0 0 20px rgba(212, 175, 55, 0.45)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.25s ease',
+              userSelect: 'none',
+            }}
+          >
+            <span>💌</span>
+            <span>Buka Pesan Pembuat Website</span>
+            <span>✨</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

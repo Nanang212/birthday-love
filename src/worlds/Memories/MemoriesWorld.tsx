@@ -13,6 +13,7 @@ import { DialogueController } from '../../components/dialogue/DialogueController
 import { MemoryModal } from '../../components/media/MemoryModal';
 import { memoriesDialogues } from '../../data/dialogues';
 import { memories } from '../../data/memories';
+import { ResponsiveCamera } from '../../components/scene/ResponsiveCamera';
 
 function MemoriesScene({ onCapyClick }: { onCapyClick: () => void }) {
   const groupRef = useRef<THREE.Group>(null);
@@ -117,6 +118,7 @@ export function MemoriesWorld() {
     <>
       <div className="scene-container">
         <Canvas camera={{ position: [0, 0.5, 5], fov: 60 }} dpr={[1, 1.5]}>
+          <ResponsiveCamera baseY={0.5} baseZ={5} targetWidth={7.5} />
           <MemoriesScene onCapyClick={() => { clickCapy(); }} />
         </Canvas>
       </div>

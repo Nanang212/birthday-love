@@ -11,6 +11,7 @@ import { Capy } from '../../components/capybara/Capy';
 import { useStory } from '../../hooks/useStory';
 import { DialogueController } from '../../components/dialogue/DialogueController';
 import { neverSaidDialogues } from '../../data/dialogues';
+import { ResponsiveCamera } from '../../components/scene/ResponsiveCamera';
 
 function NeverSaidScene({ onCapyClick }: { onCapyClick: () => void }) {
   const lightRef = useRef<THREE.PointLight>(null);
@@ -98,6 +99,7 @@ export function NeverSaidWorld() {
     <>
       <div className="scene-container">
         <Canvas camera={{ position: [0, 0.5, 3.5], fov: 58 }} dpr={[1, 1.5]}>
+          <ResponsiveCamera baseY={0.5} baseZ={3.5} targetWidth={6.0} />
           <NeverSaidScene onCapyClick={clickCapy} />
         </Canvas>
       </div>
@@ -117,18 +119,19 @@ export function NeverSaidWorld() {
         {done && (
           <div style={{
             position: 'fixed',
-            bottom: '3rem',
+            bottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))',
             left: '50%',
             transform: 'translateX(-50%)',
             zIndex: 20,
             textAlign: 'center',
+            width: 'min(92vw, 420px)',
             animation: 'fadeUp 0.8s ease',
           }}>
             <p style={{
               fontFamily: 'var(--font-script)',
-              fontSize: '1.2rem',
+              fontSize: 'clamp(1.05rem, 3.5vw, 1.25rem)',
               color: 'var(--color-gold)',
-              marginBottom: '1.5rem',
+              marginBottom: '1.25rem',
               textShadow: '0 0 20px rgba(240,194,127,0.4)',
             }}>
               ...dan ada satu hal lagi yang ingin aku tunjukkan.
