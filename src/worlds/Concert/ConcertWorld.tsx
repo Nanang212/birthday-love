@@ -15,7 +15,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useStory } from '../../hooks/useStory';
 import { Capy } from '../../components/capybara/Capy';
-import * as THREE from 'three';
 import { TravelAirplane3D } from '../../components/scene/TravelAirplane3D';
 import { ResponsiveCamera } from '../../components/scene/ResponsiveCamera';
 import { ConcertStage3D } from './ConcertStage3D';
@@ -125,22 +124,22 @@ export const ConcertWorld: React.FC = () => {
   }, [handleConcertFinish]);
 
   // ── 3. HANDLER: CAPY TURUN DARI PESAWAT KEDATANGAN ──
-  const handleDisembark = useCallback(() => {
+  const handleDisembark = useCallback((point?: [number, number, number]) => {
     if (hasExitedArrivalPlane) return;
     setHasExitedArrivalPlane(true);
 
-    // Capy melangkah turun ke lantai panggung [1.2, -1.95, 0.4]
-    setTargetPos([1.2, -1.95, 0.4]);
+    // Capy melangkah turun ke lantai panggung [1.2, -1.95, 0.4] atau titik yang diklik
+    setTargetPos(point ?? [1.2, -1.95, 0.4]);
 
     // Pesawat kedatangan terbang kembali ke angkasa
     setTimeout(() => {
       setIsArrivalPlaneFlyingAway(true);
-    }, 900);
+    }, 700);
 
     // Sura & Baya melangkah keluar dari sebelah kiri
     setTimeout(() => {
       setIsMascotsStarted(true);
-    }, 1400);
+    }, 1200);
   }, [hasExitedArrivalPlane]);
 
   // ── 4. HANDLER: PRE-CONCERT DIALOGUE SELESAI -> MULAI KONSER & YOUTUBE ──
@@ -207,20 +206,25 @@ export const ConcertWorld: React.FC = () => {
     }
   }, [isConcertActive]);
 
-  // Klik di panggung untuk menggerakkan Capy
-  const handleStageClick = (e: { point?: THREE.Vector3 }) => {
-    if (!hasExitedArrivalPlane || isCapyBoarding) return;
-    if (e.point) {
-      setTargetPos([
-        Math.max(-2.8, Math.min(3.5, e.point.x)),
-        -1.95,
-        Math.max(-0.6, Math.min(1.4, e.point.z)),
-      ]);
+  // Klik di panggung / layar untuk menggerakkan Capy atau mengajak Capy turun
+  const handleStageClick = useCallback((point?: [number, number, number]) => {
+    if (isCapyBoarding) return;
+    if (!hasExitedArrivalPlane) {
+      handleDisembark(point ?? [1.2, -1.95, 0.4]);
+      return;
     }
-  };
+    if (point) {
+      setTargetPos(point);
+    }
+  }, [hasExitedArrivalPlane, isCapyBoarding, handleDisembark]);
 
   return (
     <div
+      onClick={() => {
+        if (!hasExitedArrivalPlane) {
+          handleDisembark();
+        }
+      }}
       style={{
         position: 'relative',
         width: '100vw',
@@ -393,10 +397,12 @@ export const ConcertWorld: React.FC = () => {
             <TravelAirplane3D
               position={[3.2, -1.8, 0.4]}
               scale={0.58}
+              direction="left"
+              showPilot={false}
               label={!hasExitedArrivalPlane ? '✈️ Klik untuk Turun!' : ''}
               highlight={!hasExitedArrivalPlane}
               isTakingOff={isArrivalPlaneFlyingAway}
-              onClick={handleDisembark}
+              onClick={() => handleDisembark()}
               onFlightComplete={() => {
                 // Pesawat kedatangan sudah hilang di angkasa
               }}
@@ -441,8 +447,8 @@ export const ConcertWorld: React.FC = () => {
                 ? 'Terbang ke Perjalanan Selanjutnya! ✈️'
                 : isConcertActive
                 ? isCapyDancing
-                  ? 'Goyang NDX Rek! 🎶🕺 (Klik lagi buat istirahat)'
-                  : 'Klik aku buat ikut goyang! 🕺✨'
+                ? 'Goyang NDX Rek! 🎶🕺 (Klik lagi buat istirahat)'
+                : 'Klik aku buat ikut goyang! 🕺✨'
                 : null
             }
             onSpeechBubbleClick={
@@ -454,18 +460,38 @@ export const ConcertWorld: React.FC = () => {
             }
           />
 
-          {/* Invisible Stage Floor Plane untuk deteksi klik jalan Capy */}
+          {/* Invisible Stage Floor Plane untuk deteksi klik jalan Capy secara presisi */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
             position={[0, -2.0, 0]}
             visible={false}
-            onClick={(e) => {
+            onPointerDown={(e) => {
               e.stopPropagation();
-              handleStageClick(e);
+              handleStageClick([
+                Math.max(-2.8, Math.min(3.5, e.point.x)),
+                -1.95,
+                Math.max(-0.6, Math.min(1.4, e.point.z)),
+              ]);
             }}
           >
-            <planeGeometry args={[14, 8]} />
-            <meshBasicMaterial />
+            <planeGeometry args={[16, 10]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+
+          {/* Invisible Full-Screen Plane untuk deteksi klik di mana saja di layar (konsep sama seperti BeginningWorld) */}
+          <mesh
+            position={[0, 0, -1]}
+            visible={false}
+            onPointerDown={(e) => {
+              const p = e.point;
+              const clampedX = Math.min(Math.max(p.x, -2.8), 3.5);
+              const clampedY = -1.95;
+              const clampedZ = Math.min(Math.max((p.y + 1.2) * 0.5 + 0.4, -0.6), 1.4);
+              handleStageClick([clampedX, clampedY, clampedZ]);
+            }}
+          >
+            <planeGeometry args={[30, 20]} />
+            <meshBasicMaterial transparent opacity={0} />
           </mesh>
         </Canvas>
       </div>
@@ -499,8 +525,8 @@ export const ConcertWorld: React.FC = () => {
         {!hasExitedArrivalPlane ? (
           <span>
             🛬 Capy sudah mendarat di Konser NDX A.K.A!{' '}
-            <strong style={{ color: '#ffd166', pointerEvents: 'auto', cursor: 'pointer' }} onClick={handleDisembark}>
-              Klik pesawat atau layar ↘
+            <strong style={{ color: '#ffd166', pointerEvents: 'auto', cursor: 'pointer' }} onClick={() => handleDisembark()}>
+              Klik pesawat atau layar mana saja
             </strong>{' '}
             untuk mengajak Capy turun! ✨
           </span>
