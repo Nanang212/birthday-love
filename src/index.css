@@ -2,24 +2,17 @@
    GLOBAL STYLES — Project Ultah
    ============================================================ */
 
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Sacramento&display=swap');
 
-/* ---- Reset & Base ---- */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  /* Prevent 300ms tap delay on mobile — safe for all interactive elements */
-  touch-action: manipulation;
-}
-
-:root {
+/* ---- Tailwind v4 Theme Extension ---- */
+@theme {
   /* Colors */
   --color-bg: #080c14;
   --color-surface: rgba(255, 255, 255, 0.05);
   --color-surface-hover: rgba(255, 255, 255, 0.09);
   --color-border: rgba(255, 255, 255, 0.12);
-  --color-text: #f0ece4;
+  --color-text-main: #f0ece4;
   --color-text-muted: rgba(240, 236, 228, 0.55);
   --color-accent: #e8966a;
   --color-accent-soft: rgba(232, 150, 106, 0.18);
@@ -32,14 +25,11 @@
   --font-serif: 'Playfair Display', Georgia, serif;
   --font-script: 'Sacramento', cursive;
 
-  /* Spacing */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2.5rem;
+  /* Spacing extras */
+  --spacing-xs: 0.25rem;
+  --spacing-sm-: 0.5rem;
 
-  /* Radius */
+  /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 16px;
   --radius-lg: 24px;
@@ -50,6 +40,49 @@
   --duration-fast: 200ms;
   --duration-normal: 400ms;
   --duration-slow: 800ms;
+}
+
+/* ---- CSS Custom Properties (for usage in non-Tailwind contexts) ---- */
+:root {
+  --color-bg: #080c14;
+  --color-surface: rgba(255, 255, 255, 0.05);
+  --color-surface-hover: rgba(255, 255, 255, 0.09);
+  --color-border: rgba(255, 255, 255, 0.12);
+  --color-text: #f0ece4;
+  --color-text-muted: rgba(240, 236, 228, 0.55);
+  --color-accent: #e8966a;
+  --color-accent-soft: rgba(232, 150, 106, 0.18);
+  --color-pink: #e8a0bf;
+  --color-gold: #f0c27f;
+  --color-star: #fffbe6;
+
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-script: 'Sacramento', cursive;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2.5rem;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
+  --duration-slow: 800ms;
+}
+
+/* ---- Reset & Base ---- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  touch-action: manipulation;
 }
 
 html, body, #root {
@@ -68,18 +101,13 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
-  /* Prevent iOS font size boost in landscape */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
 
 /* ---- Scrollbars ---- */
-::-webkit-scrollbar {
-  width: 4px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: var(--radius-full);
@@ -100,6 +128,25 @@ html, body, #root {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--color-border);
+}
+
+/* ---- Full screen canvas container ---- */
+.scene-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- UI Overlay ---- */
+.ui-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+.ui-overlay > * {
+  pointer-events: auto;
 }
 
 /* ---- Animations ---- */
@@ -143,32 +190,18 @@ html, body, #root {
   50%       { transform: scale(1.05); }
 }
 
-@keyframes typewriter {
-  from { width: 0; }
-  to   { width: 100%; }
-}
-
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
 
-/* ---- Full screen canvas container ---- */
-.scene-container {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+@keyframes guideGlide {
+  0% { transform: translate(var(--startX), var(--startY)) scale(1.18); opacity: 1; }
+  75% { transform: translate(var(--targetX), var(--targetY)) scale(1); opacity: 1; }
+  100% { transform: translate(var(--targetX), var(--targetY)) scale(0.95); opacity: 0.85; }
 }
 
-/* ---- UI Overlay ---- */
-.ui-overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 10;
-}
-
-.ui-overlay > * {
-  pointer-events: auto;
+@keyframes bounceBalloon {
+  0%   { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(-7px); }
 }

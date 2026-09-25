@@ -51,80 +51,30 @@ function RouteNavigator() {
   return (
     <div
       ref={menuRef}
-      style={{
-        position: 'fixed',
-        top: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
-        right: '0.75rem',
-        zIndex: 9999,
-        fontFamily: "'Quicksand', 'Outfit', sans-serif",
-      }}
+      className="fixed top-[calc(0.75rem+env(safe-area-inset-top,0px))] right-3 z-[9999] font-[var(--font-body)]"
     >
+      {/* Trigger button */}
       <button
         id="btn-route-navigator"
         onClick={() => setIsOpen(!isOpen)}
-        style={{
-          background: 'rgba(15, 23, 42, 0.92)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          border: '1.5px solid rgba(254, 202, 87, 0.75)',
-          color: '#ffffff',
-          borderRadius: '9999px',
-          padding: '0.42rem 0.95rem',
-          fontSize: '0.76rem',
-          fontWeight: 800,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.45rem',
-          boxShadow: '0 6px 20px rgba(0,0,0,0.65), 0 0 14px rgba(254, 202, 87, 0.35)',
-          transition: 'all 0.25s ease',
-          userSelect: 'none',
-        }}
+        className="bg-[rgba(15,23,42,0.92)] backdrop-blur-md border border-[rgba(254,202,87,0.75)] text-white rounded-full px-4 py-1.5 text-xs font-extrabold cursor-pointer flex items-center gap-2 shadow-[0_6px_20px_rgba(0,0,0,0.65),0_0_14px_rgba(254,202,87,0.35)] transition-all duration-200 select-none hover:scale-105 active:scale-95"
       >
         <span>{currentConfig.icon}</span>
-        <span style={{ color: '#ffd166' }}>{currentConfig.name}</span>
-        <span style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{isOpen ? '▲' : '▼'}</span>
+        <span className="text-[#ffd166]">{currentConfig.name}</span>
+        <span className="text-[0.65rem] text-slate-400">{isOpen ? '▲' : '▼'}</span>
       </button>
 
+      {/* Dropdown menu */}
       {isOpen && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            width: 'min(90vw, 290px)',
-            background: 'rgba(11, 19, 38, 0.96)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '1.5px solid rgba(254, 202, 87, 0.6)',
-            borderRadius: '16px',
-            padding: '0.55rem',
-            boxShadow: '0 16px 40px rgba(0,0,0,0.85), 0 0 25px rgba(254, 202, 87, 0.25)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.25rem',
-            animation: 'fadeIn 0.2s ease',
-          }}
-        >
-          <div
-            style={{
-              padding: '0.35rem 0.55rem',
-              fontSize: '0.68rem',
-              fontWeight: 800,
-              color: '#94a3b8',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-              borderBottom: '1px solid rgba(255,255,255,0.1)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
+        <div className="absolute top-[calc(100%+8px)] right-0 w-[min(90vw,290px)] bg-[rgba(11,19,38,0.96)] backdrop-blur-xl border border-[rgba(254,202,87,0.6)] rounded-2xl p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(254,202,87,0.25)] flex flex-col gap-1 animate-[fadeIn_0.2s_ease]">
+          {/* Header */}
+          <div className="px-2 py-1.5 text-[0.68rem] font-extrabold text-slate-400 uppercase tracking-widest border-b border-white/10 flex justify-between items-center">
             <span>🧭 Lompat Perjalanan</span>
-            <span style={{ fontSize: '0.62rem', color: '#64748b' }}>Direct Path</span>
+            <span className="text-[0.62rem] text-slate-500">Direct Path</span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', maxHeight: '60vh', overflowY: 'auto' }}>
+          {/* World list */}
+          <div className="flex flex-col gap-0.5 max-h-[60vh] overflow-y-auto">
             {WORLDS_CONFIG.map((w) => {
               const isActive = w.id === state.currentWorld;
               return (
@@ -134,42 +84,17 @@ function RouteNavigator() {
                     setIsOpen(false);
                     if (!isActive) goToWorld(w.id);
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.45rem 0.65rem',
-                    borderRadius: '10px',
-                    border: isActive ? '1.5px solid #38bdf8' : '1px solid transparent',
-                    background: isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-                    color: isActive ? '#38bdf8' : '#f1f5f9',
-                    fontSize: '0.78rem',
-                    fontWeight: isActive ? 800 : 600,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent';
-                  }}
+                  className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold cursor-pointer text-left transition-all duration-150
+                    ${isActive
+                      ? 'border border-sky-400 bg-sky-400/15 text-sky-400 font-extrabold'
+                      : 'border border-transparent text-slate-100 hover:bg-white/10'
+                    }`}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.95rem' }}>{w.icon}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{w.icon}</span>
                     <span>{w.name}</span>
                   </div>
-                  <span
-                    style={{
-                      fontSize: '0.65rem',
-                      color: isActive ? '#38bdf8' : '#64748b',
-                      background: 'rgba(0,0,0,0.3)',
-                      padding: '0.1rem 0.35rem',
-                      borderRadius: '4px',
-                      fontFamily: 'monospace',
-                    }}
-                  >
+                  <span className={`text-[0.65rem] bg-black/30 px-1.5 py-0.5 rounded font-mono ${isActive ? 'text-sky-400' : 'text-slate-500'}`}>
                     {w.path}
                   </span>
                 </button>
@@ -177,16 +102,9 @@ function RouteNavigator() {
             })}
           </div>
 
-          <div
-            style={{
-              padding: '0.4rem 0.55rem 0.2rem',
-              borderTop: '1px solid rgba(255,255,255,0.1)',
-              fontSize: '0.64rem',
-              color: '#94a3b8',
-              lineHeight: 1.35,
-            }}
-          >
-            💡 <strong style={{ color: '#ffd166' }}>Tips:</strong> Kamu juga bisa langsung ketik di URL browser, misal: <code style={{ color: '#38bdf8' }}>/journey</code> atau <code style={{ color: '#38bdf8' }}>/concert</code>!
+          {/* Footer tip */}
+          <div className="px-2 py-1 border-t border-white/10 text-[0.64rem] text-slate-400 leading-snug">
+            💡 <strong className="text-[#ffd166]">Tips:</strong> Kamu juga bisa langsung ketik di URL browser, misal: <code className="text-sky-400">/journey</code> atau <code className="text-sky-400">/concert</code>!
           </div>
         </div>
       )}

@@ -46,9 +46,9 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
   }, [onComplete]);
 
   return (
-    <div className="loading-screen">
-      {/* Stars */}
-      <div className="loading-stars">
+    <div className="fixed inset-0 bg-[var(--color-bg)] flex flex-col items-center justify-center gap-6 z-[100] animate-[fadeIn_0.4s_ease]">
+      {/* Stars background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {STARS.map((s) => (
           <div
             key={s.id}
@@ -63,15 +63,21 @@ export function LoadingScreen({ onComplete }: LoadingScreenProps) {
         ))}
       </div>
 
-      <div className="loading-title">🦫 Capy & You</div>
+      {/* Title */}
+      <div
+        className="font-[var(--font-script)] text-[clamp(2rem,6vw,3.5rem)] text-[var(--color-gold)] [text-shadow:0_0_30px_rgba(240,194,127,0.5)] animate-[pulse_2s_ease-in-out_infinite] relative z-10"
+      >
+        🦫 Capy &amp; You
+      </div>
 
-      <div className="loading-subtitle">{message}</div>
+      {/* Subtitle */}
+      <p className="font-[var(--font-body)] text-xs sm:text-sm text-[var(--color-text-muted)] tracking-[0.15em] uppercase relative z-10 text-center px-4">
+        {message}
+      </p>
 
-      <div className="loading-bar-container">
-        <div
-          className="loading-bar-fill"
-          style={{ width: `${progress}%` }}
-        />
+      {/* Loading bar */}
+      <div className="w-[min(280px,80vw)] h-0.5 bg-[var(--color-border)] rounded-full overflow-hidden relative z-10">
+        <div className="loading-bar-fill" style={{ width: `${progress}%` }} />
       </div>
     </div>
   );

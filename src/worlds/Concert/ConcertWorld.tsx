@@ -64,7 +64,7 @@ export const ConcertWorld: React.FC = () => {
 
     setIsConcertActive(false);
     setIsConcertEnded(true);
-    setIsCapyDancing(false); // Capy otomatis berhenti goyang saat musik berakhir!
+    setIsCapyDancing(false);
   }, []);
 
   // ── 2. INISIALISASI YOUTUBE IFRAME API ──
@@ -127,16 +127,12 @@ export const ConcertWorld: React.FC = () => {
   const handleDisembark = useCallback((point?: [number, number, number]) => {
     if (hasExitedArrivalPlane) return;
     setHasExitedArrivalPlane(true);
-
-    // Capy melangkah turun ke lantai panggung [1.2, -1.95, 0.4] atau titik yang diklik
     setTargetPos(point ?? [1.2, -1.95, 0.4]);
 
-    // Pesawat kedatangan terbang kembali ke angkasa
     setTimeout(() => {
       setIsArrivalPlaneFlyingAway(true);
     }, 700);
 
-    // Sura & Baya melangkah keluar dari sebelah kiri
     setTimeout(() => {
       setIsMascotsStarted(true);
     }, 1200);
@@ -146,7 +142,6 @@ export const ConcertWorld: React.FC = () => {
   const handlePreConcertFinished = useCallback(() => {
     setIsConcertActive(true);
 
-    // Putar YouTube mulai dari 2:39 (159 detik)
     if (ytPlayerRef.current) {
       try {
         ytPlayerRef.current.seekTo(159, true);
@@ -156,16 +151,14 @@ export const ConcertWorld: React.FC = () => {
       }
     }
 
-    // Timer monitoring durasi lagu (159s s/d 201s = 42 detik)
     let elapsed = 0;
-    const totalDuration = 42; // detik
+    const totalDuration = 42;
 
     if (concertTimerRef.current) clearInterval(concertTimerRef.current);
     concertTimerRef.current = setInterval(() => {
       elapsed += 1;
       setSongProgressSec(elapsed);
 
-      // Cek currentTime dari player jika tersedia
       let playerTime = 0;
       try {
         playerTime = ytPlayerRef.current?.getCurrentTime() || 0;
@@ -182,7 +175,6 @@ export const ConcertWorld: React.FC = () => {
 
   // ── 5. HANDLER: POST-CONCERT DIALOGUE SELESAI -> PESAWAT DATANG ──
   const handlePostConcertFinished = useCallback(() => {
-    // Pesawat keberangkatan mendarat di pojok kiri bawah
     setIsDeparturePlaneReady(true);
   }, []);
 
@@ -190,8 +182,6 @@ export const ConcertWorld: React.FC = () => {
   const handleBoardDeparturePlane = useCallback(() => {
     if (isCapyBoarding || isDeparturePlaneFlying) return;
     setIsCapyBoarding(true);
-
-    // Capy melangkah menuju kokpit pesawat di pojok kiri [-3.1, -1.75, 0.4]
     setTargetPos([-3.1, -1.75, 0.4]);
 
     setTimeout(() => {
@@ -206,7 +196,6 @@ export const ConcertWorld: React.FC = () => {
     }
   }, [isConcertActive]);
 
-  // Klik di panggung / layar untuk menggerakkan Capy atau mengajak Capy turun
   const handleStageClick = useCallback((point?: [number, number, number]) => {
     if (isCapyBoarding) return;
     if (!hasExitedArrivalPlane) {
@@ -225,166 +214,138 @@ export const ConcertWorld: React.FC = () => {
           handleDisembark();
         }
       }}
-      style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
-        overflow: 'hidden',
-        background: 'radial-gradient(ellipse at 50% 30%, #1c0a35 0%, #080415 70%, #030108 100%)',
-      }}
+      className="relative w-screen h-screen overflow-hidden bg-[radial-gradient(ellipse_at_50%_30%,#1c0a35_0%,#080415_70%,#030108_100%)]"
     >
-      {/* ── 1. GIANT LED CONCERT STAGE SCREEN (YOUTUBE EMBED) ── */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10,
-          width: 'clamp(280px, 90vw, 480px)',
-          pointerEvents: isConcertActive ? 'auto' : 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          transition: 'all 0.5s ease',
-        }}
-      >
-        {/* Stage Marquee Header */}
+      {/* ── 1. CONCERT UI: Video Panel + Hint Banner (Stacked, no overlap) ── */}
+      <div className="fixed top-[calc(env(safe-area-inset-top,0px)+0.5rem)] left-1/2 -translate-x-1/2 z-[40]
+        w-[min(92vw,480px)] flex flex-col items-center gap-1.5">
+
+        {/* GIANT LED CONCERT STAGE SCREEN (YOUTUBE EMBED) */}
         <div
-          style={{
-            background: 'linear-gradient(90deg, #ff007f, #7928ca, #00f0ff)',
-            padding: '4px 16px',
-            borderRadius: '20px 20px 0 0',
-            color: '#fff',
-            fontFamily: "'Quicksand', 'Outfit', sans-serif",
-            fontWeight: 800,
-            fontSize: '11px',
-            letterSpacing: '1.5px',
-            textTransform: 'uppercase',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 0 20px rgba(255, 0, 127, 0.6)',
-          }}
+          className={`w-full flex flex-col items-center transition-all duration-500
+            ${isConcertActive ? 'pointer-events-auto' : 'pointer-events-none'}`}
         >
-          <span>🔥</span>
-          <span>NDX A.K.A LIVE CONCERT STAGE</span>
-          <span>{isConcertActive ? '🔴 LIVE (2:39 - 3:21)' : '⏳ SIAP KONSER'}</span>
-        </div>
-
-        {/* Video Player Container */}
-        <div
-          style={{
-            position: 'relative',
-            width: '100%',
-            aspectRatio: '16 / 9',
-            background: '#000',
-            borderRadius: '0 0 16px 16px',
-            overflow: 'hidden',
-            border: isConcertActive
-              ? '3px solid #00f0ff'
-              : '2px solid rgba(255, 255, 255, 0.15)',
-            boxShadow: isConcertActive
-              ? '0 0 45px rgba(0, 240, 255, 0.5), 0 0 20px rgba(255, 0, 127, 0.4)'
-              : '0 10px 30px rgba(0,0,0,0.6)',
-          }}
-        >
-          <div
-            id="concert-yt-player"
-            style={{ width: '100%', height: '100%' }}
-          />
-
-          {/* Overlay saat musik belum mulai */}
-          {!isConcertActive && !isConcertEnded && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'rgba(10, 6, 22, 0.82)',
-                backdropFilter: 'blur(4px)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontFamily: "'Quicksand', 'Outfit', sans-serif",
-                padding: '20px',
-                textAlign: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <div style={{ fontSize: '32px', marginBottom: '8px', animation: 'bounce 1.5s infinite' }}>
-                🎤
-              </div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#feca57' }}>
-                Panggung Konser NDX A.K.A Siap!
-              </div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px', maxWidth: '300px' }}>
-                Musik akan berputar otomatis (menit 2:39 – 3:21) setelah Capy menyapa Sura & Baya!
-              </div>
-            </div>
-          )}
-
-          {/* Overlay setelah konser selesai (3:21) */}
-          {isConcertEnded && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'rgba(10, 6, 22, 0.88)',
-                backdropFilter: 'blur(6px)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontFamily: "'Quicksand', 'Outfit', sans-serif",
-                padding: '16px',
-                textAlign: 'center',
-                pointerEvents: 'none',
-              }}
-            >
-              <div style={{ fontSize: '28px', marginBottom: '4px' }}>✨🎉</div>
-              <div style={{ fontSize: '14.5px', fontWeight: 800, color: '#00f0ff' }}>
-                Konser Selesai!
-              </div>
-              <div style={{ fontSize: '12px', color: '#fef08a', marginTop: '4px', fontWeight: 600 }}>
-                Full-nya lanjut di Part 2 Offline 13 Desember 2026! 💖
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Progress Bar Lagu Konser (42 detik) */}
-        {isConcertActive && (
-          <div
-            style={{
-              width: '100%',
-              height: '4px',
-              background: 'rgba(255,255,255,0.2)',
-              marginTop: '4px',
-              borderRadius: '2px',
-              overflow: 'hidden',
-            }}
+          {/* Stage Marquee Header */}
+          <div className="w-full bg-gradient-to-r from-[#ff007f] via-[#7928ca] to-[#00f0ff]
+            px-3 py-0.5 rounded-t-xl text-white
+            font-['Quicksand','Outfit',sans-serif] font-extrabold text-[10px] sm:text-[11px]
+            tracking-[1.5px] uppercase flex items-center justify-center gap-2
+            shadow-[0_0_20px_rgba(255,0,127,0.6)]"
           >
-            <div
-              style={{
-                height: '100%',
-                width: `${Math.min(100, (songProgressSec / 42) * 100)}%`,
-                background: 'linear-gradient(90deg, #00f0ff, #ff007f)',
-                transition: 'width 1s linear',
-              }}
-            />
+            <span>🔥</span>
+            <span className="hidden sm:inline">NDX A.K.A LIVE CONCERT STAGE</span>
+            <span className="sm:hidden">NDX A.K.A LIVE</span>
+            <span>{isConcertActive ? '🔴 LIVE (2:39-3:21)' : '⏳ SIAP'}</span>
           </div>
-        )}
+
+          {/* Video Player Container — max height capped so it doesn't eat the screen */}
+          <div
+            className={`relative w-full bg-black rounded-b-xl overflow-hidden
+              ${isConcertActive
+                ? 'border-[3px] border-[#00f0ff] shadow-[0_0_45px_rgba(0,240,255,0.5),0_0_20px_rgba(255,0,127,0.4)]'
+                : 'border-2 border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.6)]'
+              }`}
+            style={{ aspectRatio: '16/9', maxHeight: 'min(40vh, 270px)' }}
+          >
+            <div id="concert-yt-player" className="w-full h-full" />
+
+            {/* Overlay saat musik belum mulai */}
+            {!isConcertActive && !isConcertEnded && (
+              <div className="absolute inset-0 bg-[rgba(10,6,22,0.82)] backdrop-blur-sm
+                flex flex-col items-center justify-center text-white px-4 py-3 text-center pointer-events-none
+                font-['Quicksand','Outfit',sans-serif]"
+              >
+                <div className="text-2xl sm:text-3xl mb-1 animate-bounce">🎤</div>
+                <div className="text-[12px] sm:text-[15px] font-bold text-[#feca57]">Panggung Konser NDX A.K.A Siap!</div>
+                <div className="text-[10px] sm:text-xs text-slate-400 mt-0.5 max-w-[280px]">
+                  Musik otomatis (menit 2:39–3:21) setelah Capy menyapa Sura &amp; Baya!
+                </div>
+              </div>
+            )}
+
+            {/* Overlay setelah konser selesai (3:21) */}
+            {isConcertEnded && (
+              <div className="absolute inset-0 bg-[rgba(10,6,22,0.88)] backdrop-blur-md
+                flex flex-col items-center justify-center text-white p-4 text-center pointer-events-none
+                font-['Quicksand','Outfit',sans-serif]"
+              >
+                <div className="text-[26px] mb-1">✨🎉</div>
+                <div className="text-[13px] sm:text-[14.5px] font-extrabold text-[#00f0ff]">Konser Selesai!</div>
+                <div className="text-[10px] sm:text-xs text-yellow-200 mt-1 font-semibold">
+                  Full-nya lanjut di Part 2 Offline 13 Desember 2026! 💖
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Progress Bar Lagu Konser (42 detik) */}
+          {isConcertActive && (
+            <div className="w-full h-1 bg-white/20 mt-1 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-[#00f0ff] to-[#ff007f] transition-[width] duration-1000 ease-linear"
+                style={{ width: `${Math.min(100, (songProgressSec / 42) * 100)}%` }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* ── HINT BANNER — naturally below the video ── */}
+        <div
+          className="w-full bg-[rgba(12,8,26,0.92)] backdrop-blur-md
+            border border-white/15 rounded-xl
+            px-3 py-1.5
+            text-slate-200 font-['Quicksand','Outfit',sans-serif]
+            text-[clamp(10px,2.2vw,12px)] font-semibold
+            flex items-center gap-2 shadow-[0_4px_16px_rgba(0,0,0,0.6)]
+            text-center justify-center leading-snug
+            pointer-events-none"
+        >
+          {!hasExitedArrivalPlane ? (
+            <span>
+              🛬 Capy mendarat di Konser NDX!{' '}
+              <strong
+                className="text-[#ffd166] pointer-events-auto cursor-pointer"
+                onClick={() => handleDisembark()}
+              >
+                Klik pesawat ↘ atau layar
+              </strong>{' '}
+              untuk ajak Capy turun! ✨
+            </span>
+          ) : !isConcertActive && !isConcertEnded ? (
+            <span>🦈🐊 Sura &amp; Baya menyapa Capy! Klik balon untuk lanjut... 💬</span>
+          ) : isConcertActive ? (
+            <span>
+              🔥 <strong className="text-[#00f0ff]">KONSER LIVE!</strong>{' '}
+              <strong
+                className="text-[#ffd166] pointer-events-auto cursor-pointer underline"
+                onClick={handleCapyClick}
+              >
+                {isCapyDancing ? 'Klik Capy: istirahat ⏸️' : 'Klik Capy: ikut goyang 🕺'}
+              </strong>
+            </span>
+          ) : !isDeparturePlaneReady ? (
+            <span>🎉 Konser selesai! Mendengarkan pesan dari Sura &amp; Baya... 💖</span>
+          ) : (
+            <span>
+              ✈️{' '}
+              <strong
+                className="text-[#ffd166] pointer-events-auto cursor-pointer"
+                onClick={handleBoardDeparturePlane}
+              >
+                Pesawat tiba di pojok kiri ↙
+              </strong>{' '}
+              – klik pesawat atau Capy! ✨
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* ── 2. THREE.JS 3D CONCERT STAGE CANVAS ── */}
-      <div style={{ width: '100%', height: '100%' }}>
+      {/* ── 2. THREE.JS 3D CONCERT STAGE CANVAS (background, behind UI) ── */}
+      <div className="absolute inset-0 z-[5]">
         <Canvas
           camera={{ position: [0, 0.2, 5.2], fov: 52 }}
           gl={{ antialias: true }}
-          dpr={[1, 2]}
+          dpr={[1, 1.5]}
         >
           {/* Kontrol Kamera Responsif Otomatis untuk HP & iPad */}
           <ResponsiveCamera baseY={0.2} baseZ={5.2} targetWidth={8.8} />
@@ -392,7 +353,7 @@ export const ConcertWorld: React.FC = () => {
           {/* Panggung, Lampu Moving Head, Rigging & Crowd Glowsticks */}
           <ConcertStage3D isConcertActive={isConcertActive} />
 
-          {/* Pesawat Kedatangan (Pojok Kanan Bawah): Terbang pergi setelah Capy turun */}
+          {/* Pesawat Kedatangan */}
           {!hasExitedArrivalPlane || isArrivalPlaneFlyingAway ? (
             <TravelAirplane3D
               position={[3.2, -1.8, 0.4]}
@@ -409,7 +370,7 @@ export const ConcertWorld: React.FC = () => {
             />
           ) : null}
 
-          {/* Pesawat Keberangkatan (Pojok Kiri Bawah): Muncul setelah dialog selesai */}
+          {/* Pesawat Keberangkatan */}
           {(isDeparturePlaneReady || isDeparturePlaneFlying) && (
             <TravelAirplane3D
               position={[-3.5, -1.8, 0.4]}
@@ -419,7 +380,6 @@ export const ConcertWorld: React.FC = () => {
               isTakingOff={isDeparturePlaneFlying}
               onClick={handleBoardDeparturePlane}
               onFlightComplete={() => {
-                // Selesai terbang -> lanjut ke Taipei (JourneyWorld)
                 goToWorld('journey');
               }}
             />
@@ -460,7 +420,7 @@ export const ConcertWorld: React.FC = () => {
             }
           />
 
-          {/* Invisible Stage Floor Plane untuk deteksi klik jalan Capy secara presisi */}
+          {/* Invisible Stage Floor Plane untuk deteksi klik jalan Capy */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}
             position={[0, -2.0, 0]}
@@ -478,7 +438,7 @@ export const ConcertWorld: React.FC = () => {
             <meshBasicMaterial transparent opacity={0} />
           </mesh>
 
-          {/* Invisible Full-Screen Plane untuk deteksi klik di mana saja di layar (konsep sama seperti BeginningWorld) */}
+          {/* Invisible Full-Screen Plane untuk deteksi klik di mana saja */}
           <mesh
             position={[0, 0, -1]}
             visible={false}
@@ -495,72 +455,7 @@ export const ConcertWorld: React.FC = () => {
           </mesh>
         </Canvas>
       </div>
-
-      {/* ── 3. TOP BANNER PETUNJUK INTERAKTIF ── */}
-      <div
-        style={{
-          position: 'fixed',
-          top: 'calc(env(safe-area-inset-top, 0px) + clamp(175px, 28vw * 0.5625 + 60px, 340px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 40,
-          background: 'rgba(12, 8, 26, 0.88)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          borderRadius: '16px',
-          padding: '8px clamp(10px, 3vw, 18px)',
-          color: '#e2e8f0',
-          fontFamily: "'Quicksand', 'Outfit', sans-serif",
-          fontSize: 'clamp(10.5px, 2.2vw, 12.5px)',
-          fontWeight: 600,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-          pointerEvents: 'none',
-          width: 'min(92vw, 580px)',
-          textAlign: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {!hasExitedArrivalPlane ? (
-          <span>
-            🛬 Capy sudah mendarat di Konser NDX A.K.A!{' '}
-            <strong style={{ color: '#ffd166', pointerEvents: 'auto', cursor: 'pointer' }} onClick={() => handleDisembark()}>
-              Klik pesawat atau layar mana saja
-            </strong>{' '}
-            untuk mengajak Capy turun! ✨
-          </span>
-        ) : !isConcertActive && !isConcertEnded ? (
-          <span>
-            🦈🐊 Sura dan Baya menyapa Capy! Klik balon dialog untuk mempercepat percakapan... 💬
-          </span>
-        ) : isConcertActive ? (
-          <span>
-            🔥 <strong style={{ color: '#00f0ff' }}>Konser NDX A.K.A Sedang Berlangsung!</strong> Sura & Baya asyik
-            loncat & goyang!{' '}
-            <strong
-              style={{ color: '#ffd166', pointerEvents: 'auto', cursor: 'pointer', textDecoration: 'underline' }}
-              onClick={handleCapyClick}
-            >
-              {isCapyDancing ? 'Klik Capy untuk istirahat goyang ⏸️' : 'Klik Capy untuk ikut goyang 🕺✨'}
-            </strong>{' '}
-            (2:39 – 3:21)
-          </span>
-        ) : !isDeparturePlaneReady ? (
-          <span>
-            🎉 Konser selesai! Mendengarkan pesan dari Sura & Baya... 💖
-          </span>
-        ) : (
-          <span>
-            ✈️{' '}
-            <strong style={{ color: '#ffd166', pointerEvents: 'auto', cursor: 'pointer' }} onClick={handleBoardDeparturePlane}>
-              Pesawat Perjalanan Selanjutnya telah tiba di pojok kiri ↙!
-            </strong>{' '}
-            Klik balon Capy atau pesawat untuk terbang! ✨
-          </span>
-        )}
-      </div>
     </div>
   );
 };
+

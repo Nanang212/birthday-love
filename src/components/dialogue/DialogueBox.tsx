@@ -64,30 +64,37 @@ export function DialogueBox({ line, onComplete, onContinue, showContinue = false
   }, [isDone, line.text, onComplete]);
 
   return (
-    <div className="dialogue-box" onClick={handleSkip} role="dialog" aria-label="Story dialogue">
-      <div className="dialogue-inner">
+    <div
+      className="fixed bottom-0 left-0 right-0 z-20 px-4 pt-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-6 bg-gradient-to-t from-[rgba(8,12,20,0.97)] via-[rgba(8,12,20,0.8)] to-transparent"
+      onClick={handleSkip}
+      role="dialog"
+      aria-label="Story dialogue"
+    >
+      <div className="max-w-xl mx-auto">
         {/* Speaker */}
-        <div className="dialogue-speaker">
-          <div className={`dialogue-avatar dialogue-avatar--${line.speaker}`}>
+        <div className="flex items-center gap-2 mb-2">
+          <div
+            className={`dialogue-avatar--${line.speaker} w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0`}
+          >
             {SPEAKER_AVATARS[line.speaker]}
           </div>
-          <span className={`dialogue-name dialogue-name--${line.speaker}`}>
+          <span className={`dialogue-name--${line.speaker} text-xs font-semibold tracking-widest uppercase`}>
             {SPEAKER_LABELS[line.speaker]}
           </span>
         </div>
 
         {/* Text */}
-        <p className="dialogue-text">
+        <p className="text-[clamp(0.92rem,2.5vw,1.15rem)] leading-relaxed text-[var(--color-text)] min-h-[2.4em] cursor-pointer select-none">
           {displayed}
           {!isDone && <span className="dialogue-cursor" aria-hidden="true" />}
         </p>
 
         {/* Continue button */}
         {isDone && showContinue && (
-          <div className="dialogue-actions">
+          <div className="flex items-center justify-end mt-4 gap-2 animate-[fadeIn_0.4s_ease]">
             <button
               id="btn-dialogue-continue"
-              className="btn-continue"
+              className="flex items-center gap-1 px-5 py-2 bg-[var(--color-accent-soft)] border border-[rgba(232,150,106,0.3)] rounded-full text-[var(--color-accent)] text-sm font-medium font-[var(--font-body)] cursor-pointer transition-all duration-200 hover:bg-[rgba(232,150,106,0.28)] hover:translate-x-1 active:scale-95 min-h-[44px] sm:min-h-0"
               onClick={(e) => {
                 e.stopPropagation();
                 onContinue?.();
@@ -95,7 +102,7 @@ export function DialogueBox({ line, onComplete, onContinue, showContinue = false
               aria-label="Continue to next line"
             >
               Lanjut
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M9 18l6-6-6-6" />
               </svg>
             </button>

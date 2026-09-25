@@ -253,64 +253,47 @@ export function OpeningWorld() {
 
       <div className="ui-overlay">
         {/* Petunjuk Interaksi Atas */}
-        <div style={{
-          position: 'fixed',
-          top: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 25,
-          width: 'min(94vw, 640px)',
-          background: 'rgba(7, 11, 22, 0.92)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: speechBubbleText ? '2px solid #f1c40f' : '1px solid rgba(240, 194, 127, 0.5)',
-          borderRadius: '16px',
-          padding: '0.5rem clamp(0.75rem, 2.5vw, 1.3rem)',
-          fontSize: 'clamp(0.68rem, 2.2vw, 0.86rem)',
-          lineHeight: '1.45',
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          gap: '0.5rem',
-          boxShadow: speechBubbleText
-            ? '0 0 25px rgba(241, 196, 15, 0.6), 0 8px 32px rgba(0, 0, 0, 0.8)'
-            : '0 8px 32px rgba(0, 0, 0, 0.75)',
-          pointerEvents: 'none',
-          textShadow: '0 1px 4px rgba(0, 0, 0, 0.9)',
-          transition: 'all 0.4s ease',
-        }}>
-          <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{isAirplane1Flying ? '🛫' : '✈️'}</span>
+        <div
+          className={`fixed top-[calc(0.75rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-[25] w-[min(94vw,640px)]
+            bg-[rgba(7,11,22,0.92)] backdrop-blur-md
+            rounded-2xl px-[clamp(0.75rem,2.5vw,1.3rem)] py-2
+            text-[clamp(0.68rem,2.2vw,0.86rem)] leading-snug text-white
+            flex items-center justify-center text-center gap-2
+            pointer-events-none [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]
+            transition-all duration-400
+            ${speechBubbleText
+              ? 'border-2 border-yellow-400 shadow-[0_0_25px_rgba(241,196,15,0.6),0_8px_32px_rgba(0,0,0,0.8)]'
+              : 'border border-[rgba(240,194,127,0.5)] shadow-[0_8px_32px_rgba(0,0,0,0.75)]'
+            }`}
+        >
+          <span className="text-lg flex-shrink-0">{isAirplane1Flying ? '🛫' : '✈️'}</span>
           <span>
             {isAirplane1Flying ? (
               <>
-                🛫 <strong style={{ color: '#ffd166' }}>Pesawat Capy lepas landas!</strong> Terbang menuju Perjalanan Pertama... ✨
+                🛫 <strong className="text-[#ffd166]">Pesawat Capy lepas landas!</strong> Terbang menuju Perjalanan Pertama... ✨
               </>
             ) : isEnteringHouse ? (
               <>
                 ✈️ Capy sedang bersiap naik ke pesawat... Siap-siap terbang! 🛫✨
               </>
             ) : (exitedFromHouse2 || hasVisitedHouse2 || hasVisitedHouse1) ? (
-              // Baru kembali dari perjalanan realita
               <>
-                🌸 Capy baru saja kembali dari perjalanannya! <strong style={{ color: '#ffd166' }}>Klik Pesawat</strong> untuk jalan-jalan lagi! • <strong style={{ color: '#ffd166' }}>SPASI</strong> lompat
+                🌸 Capy baru saja kembali dari perjalanannya! <strong className="text-[#ffd166]">Klik Pesawat</strong> untuk jalan-jalan lagi! • <strong className="text-[#ffd166]">SPASI</strong> lompat
               </>
             ) : isInitialThresholdMet ? (
-              // Pertama kali buka & sudah klik 4x
               <>
-                ✈️ Pesawat Perjalanan Pertama siap di pojok kanan bawah! <strong style={{ color: '#ffd166' }}>Klik Pesawatnya ↘</strong> untuk mengajak Capy terbang! 🛫✨
+                ✈️ Pesawat Perjalanan Pertama siap di pojok kanan bawah! <strong className="text-[#ffd166]">Klik Pesawatnya ↘</strong> untuk mengajak Capy terbang! 🛫✨
               </>
             ) : (
-              // Pertama kali buka & belum klik 4x
               <>
-                <strong style={{ color: '#ffd166' }}>Klik layar ({4 - Math.min(clickCount, 4)}x lagi)</strong> untuk panggil Capy & siapkan Pesawat Perjalanan Pertama •{' '}
-                <strong style={{ color: '#ffd166' }}>Klik Capy</strong> putar 360° •{' '}
-                <strong style={{ color: '#ffd166' }}>SPASI</strong> lompat
+                <strong className="text-[#ffd166]">Klik layar ({4 - Math.min(clickCount, 4)}x lagi)</strong> untuk panggil Capy &amp; siapkan Pesawat Perjalanan Pertama •{' '}
+                <strong className="text-[#ffd166]">Klik Capy</strong> putar 360° •{' '}
+                <strong className="text-[#ffd166]">SPASI</strong> lompat
               </>
             )}
           </span>
         </div>
+
 
         {/* Info Capy di balik bumi (hanya saat pertama kali sebelum pernah mengunjungi rumah) */}
         {!hasVisitedHouse1 && !hasVisitedHouse2 && phase === 'capy-intro' && (

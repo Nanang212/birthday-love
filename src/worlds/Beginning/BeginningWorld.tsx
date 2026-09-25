@@ -189,14 +189,12 @@ export function BeginningWorld() {
     };
   }, []);
 
-  // Handler klik di mana saja pada layar atau pada rumah kanan
   // Handler klik di mana saja pada layar atau pada pesawat kedatangan
   const handleTriggerExit = (point?: [number, number, number]) => {
     if (isReturning) return;
 
     if (!hasExitedHouse) {
       setHasExitedHouse(true);
-      // Pertama kali keluar, arahkan Capy berjalan ke arah tengah-bawah layar
       setTargetPos(point ?? [0.2, -0.8, 1.0]);
 
       // Begitu Capy melangkah turun ke jalan, pesawat kedatangan terbang pergi!
@@ -204,7 +202,6 @@ export function BeginningWorld() {
         setIsArrivalPlaneFlying(true);
       }, 700);
     } else if (point) {
-      // Jika sudah keluar, Capy berjalan ke titik klik baru & counter bertambah
       setTargetPos(point);
       setWalkClicks((prev) => prev + 1);
     }
@@ -216,29 +213,21 @@ export function BeginningWorld() {
     setIsReturning(true);
     setHasExitedHouse(true);
 
-    // Arahkan Capy berjalan menuju tangga pesawat di pojok kiri bawah [-3.1, -1.75, 0.4]
     setTargetPos([-3.1, -1.75, 0.4]);
 
-    // Begitu Capy mendekati pesawat (~1100ms), Capy naik ke dalam kokpit dan pesawat lepas landas!
     setTimeout(() => {
       setIsAirplaneFlying(true);
     }, 1100);
   };
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+    <div className="relative w-screen h-screen overflow-hidden">
       {/* 1. Background Video YouTube Jalan Tunjungan Full Screen Looping (2160p 4K @ 0.5x Speed) */}
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-        overflow: 'hidden',
-        pointerEvents: 'none',
-      }}>
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
         <div
           id="yt-tunjungan-player"
+          className="absolute border-none"
           style={{
-            position: 'absolute',
             top: '38%',
             left: '50%',
             width: '100vw',
@@ -246,14 +235,12 @@ export function BeginningWorld() {
             minWidth: '185vh',
             minHeight: '60vw',
             transform: 'translate(-50%, -38%) scale(1.42)',
-            border: 'none',
           }}
         />
-
       </div>
 
       {/* 3. 3D Canvas di atas Video */}
-      <div className="scene-container" style={{ zIndex: 10 }}>
+      <div className="scene-container z-10">
         <Canvas
           camera={{ position: [0, 0.8, 5.2], fov: 55 }}
           gl={{ alpha: true, antialias: true }}
@@ -268,7 +255,7 @@ export function BeginningWorld() {
           <pointLight position={[3.8, -0.8, 1.2]} intensity={1.5} color="#f9ca24" distance={8} />
           <pointLight position={[-3.8, -0.8, 1.2]} intensity={1.5} color="#00d2d3" distance={8} />
 
-          {/* Pesawat Kedatangan di Pojok Kanan Bawah Sendiri - Terbang pergi saat Capy sudah turun! */}
+          {/* Pesawat Kedatangan di Pojok Kanan Bawah - Terbang pergi saat Capy sudah turun! */}
           {!isArrivalPlaneGone && (
             <TravelAirplane3D
               position={[3.5, -1.8, 0.4]}
@@ -285,7 +272,7 @@ export function BeginningWorld() {
             />
           )}
 
-          {/* Pesawat 3D: "✈️ Perjalanan Selanjutnya" di Pojok Kiri Bawah - HANYA tampil setelah maskot selesai pamitan */}
+          {/* Pesawat 3D: "✈️ Perjalanan Selanjutnya" di Pojok Kiri Bawah */}
           {(areMascotsDoneFarewell || isReturning) && (
             <TravelAirplane3D
               position={[-3.5, -1.8, 0.4]}
@@ -300,7 +287,7 @@ export function BeginningWorld() {
             />
           )}
 
-          {/* Maskot Kapibara: Awalnya di pintu rumah kanan, melangkah keluar saat diklik */}
+          {/* Maskot Kapibara */}
           <Capy
             outfit="normal"
             position={[3.8, -1.95, 0.4]}
@@ -314,7 +301,7 @@ export function BeginningWorld() {
             onSpeechBubbleClick={handleBoardAirplane}
           />
 
-          {/* Maskot Surabaya: Sura (Hiu) dari kiri & Baya (Buaya) dari kanan - pergi & hilang setelah pamitan selesai */}
+          {/* Maskot Surabaya: Sura (Hiu) & Baya (Buaya) */}
           {!areMascotsDoneFarewell && (
             <SurabayaMascots
               isStarted={isReadyForMascots}
@@ -341,77 +328,48 @@ export function BeginningWorld() {
       </div>
 
       {/* UI Overlay */}
-      <div className="ui-overlay" style={{ zIndex: 20 }}>
+      <div className="ui-overlay z-20">
         {/* Tombol Kontrol Musik Lagu Daerah Surabaya: Rek Ayo Rek */}
         <button
           id="btn-music-rek-ayo-rek"
           onClick={toggleMusic}
-          style={{
-            position: 'fixed',
-            top: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
-            left: 'clamp(0.6rem, 2vw, 1.5rem)',
-            zIndex: 35,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.4rem',
-            padding: '0.4rem clamp(0.6rem, 1.5vw, 1.0rem)',
-            borderRadius: '9999px',
-            background: isPlayingMusic ? 'rgba(255, 159, 67, 0.35)' : 'rgba(20, 20, 25, 0.75)',
-            border: isPlayingMusic ? '1.5px solid rgba(254, 202, 87, 0.8)' : '1px solid rgba(255, 255, 255, 0.25)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            color: '#ffffff',
-            fontSize: 'clamp(0.72rem, 1.8vw, 0.84rem)',
-            fontWeight: 600,
-            cursor: 'pointer',
-            boxShadow: isPlayingMusic ? '0 0 20px rgba(254, 202, 87, 0.4)' : '0 4px 16px rgba(0, 0, 0, 0.5)',
-            transition: 'all 0.25s ease',
-          }}
+          className={`fixed top-[calc(0.75rem+env(safe-area-inset-top,0px))] left-[clamp(0.6rem,2vw,1.5rem)] z-[35]
+            flex items-center gap-1.5 px-[clamp(0.6rem,1.5vw,1.0rem)] py-2 rounded-full
+            backdrop-blur-md text-white text-[clamp(0.72rem,1.8vw,0.84rem)] font-semibold
+            cursor-pointer transition-all duration-200
+            ${isPlayingMusic
+              ? 'bg-[rgba(255,159,67,0.35)] border border-[rgba(254,202,87,0.8)] shadow-[0_0_20px_rgba(254,202,87,0.4)]'
+              : 'bg-[rgba(20,20,25,0.75)] border border-[rgba(255,255,255,0.25)] shadow-[0_4px_16px_rgba(0,0,0,0.5)]'
+            }`}
           title={isPlayingMusic ? 'Klik untuk jeda lagu' : 'Klik untuk putar lagu'}
         >
-          <span style={{ fontSize: '1.05rem' }}>{isPlayingMusic ? '🎶' : '🔇'}</span>
+          <span className="text-lg">{isPlayingMusic ? '🎶' : '🔇'}</span>
           <span>{isPlayingMusic ? 'Rek Ayo Rek' : 'Putar Musik'}</span>
         </button>
 
         {/* Petunjuk Interaksi Atas */}
-        <div style={{
-          position: 'fixed',
-          top: 'calc(3.25rem + env(safe-area-inset-top, 0px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 25,
-          width: 'min(94vw, 620px)',
-          background: 'rgba(7, 11, 22, 0.92)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(240, 194, 127, 0.5)',
-          borderRadius: '16px',
-          padding: '0.5rem clamp(0.75rem, 2.5vw, 1.3rem)',
-          fontSize: 'clamp(0.68rem, 2.2vw, 0.86rem)',
-          lineHeight: '1.45',
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          gap: '0.5rem',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.75)',
-          pointerEvents: 'none',
-          textShadow: '0 1px 4px rgba(0, 0, 0, 0.9)',
-        }}>
+        <div className="fixed top-[calc(3.25rem+env(safe-area-inset-top,0px))] left-1/2 -translate-x-1/2 z-[25]
+          w-[min(94vw,620px)] bg-[rgba(7,11,22,0.92)] backdrop-blur-md
+          border border-[rgba(240,194,127,0.5)] rounded-2xl
+          px-[clamp(0.75rem,2.5vw,1.3rem)] py-2
+          text-[clamp(0.68rem,2.2vw,0.86rem)] leading-snug text-white
+          flex items-center justify-center text-center gap-2
+          shadow-[0_8px_32px_rgba(0,0,0,0.75)] pointer-events-none
+          [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]"
+        >
           <span>🦫</span>
           <span>
             {!hasExitedHouse ? (
               <>
-                Capy sudah mendarat di pesawat kedatangan! <strong style={{ color: '#ffd166' }}>Klik pesawat atau layar ↘</strong> untuk mengajak Capy turun & jalan-jalan! ✈️✨
+                Capy sudah mendarat di pesawat kedatangan! <strong className="text-[#ffd166]">Klik pesawat atau layar ↘</strong> untuk mengajak Capy turun &amp; jalan-jalan! ✈️✨
               </>
             ) : isArrivalPlaneFlying && !isArrivalPlaneGone ? (
               <>
-                🛫 <strong style={{ color: '#ffd166' }}>Pesawat kedatangan terbang kembali ke angkasa!</strong> Capy siap menjelajahi Tunjungan... ✨
+                🛫 <strong className="text-[#ffd166]">Pesawat kedatangan terbang kembali ke angkasa!</strong> Capy siap menjelajahi Tunjungan... ✨
               </>
             ) : isAirplaneFlying ? (
               <>
-                🛫 <strong style={{ color: '#ffd166' }}>Pesawat Capy lepas landas!</strong> Terbang menuju perjalanan selanjutnya... ✨
+                🛫 <strong className="text-[#ffd166]">Pesawat Capy lepas landas!</strong> Terbang menuju perjalanan selanjutnya... ✨
               </>
             ) : isReturning ? (
               <>
@@ -419,25 +377,25 @@ export function BeginningWorld() {
               </>
             ) : areMascotsDoneFarewell ? (
               <>
-                ✈️ <strong style={{ color: '#ffd166' }}>Pesawat Perjalanan Selanjutnya telah tiba!</strong> Klik balon Capy atau pesawat di pojok kiri ↙ untuk terbang! ✨
+                ✈️ <strong className="text-[#ffd166]">Pesawat Perjalanan Selanjutnya telah tiba!</strong> Klik balon Capy atau pesawat di pojok kiri ↙ untuk terbang! ✨
               </>
             ) : !isReadyForMascots && walkClicks >= 4 ? (
               <>
-                🏃‍♂️ <strong style={{ color: '#ffd166' }}>Kalau sudah capek jalan-jalannya</strong>, jangan lupa klik tombol <strong style={{ color: '#ffd166' }}>Ready! ✨</strong>
+                🏃‍♂️ <strong className="text-[#ffd166]">Kalau sudah capek jalan-jalannya</strong>, jangan lupa klik tombol <strong className="text-[#ffd166]">Ready! ✨</strong>
               </>
             ) : !isReadyForMascots ? (
               <>
-                <strong style={{ color: '#ffd166' }}>Ajak Capy jalan-jalan ({walkClicks}/4)</strong> • Klik layar untuk berjalan
+                <strong className="text-[#ffd166]">Ajak Capy jalan-jalan ({walkClicks}/4)</strong> • Klik layar untuk berjalan
               </>
             ) : isReadyForMascots && !areMascotsDoneFarewell ? (
               <>
-                🐊🦈 <strong style={{ color: '#ffd166' }}>Sura & Baya sedang menyapa Capy...</strong> Dengarkan cerita hangat mereka! ✨
+                🐊🦈 <strong className="text-[#ffd166]">Sura &amp; Baya sedang menyapa Capy...</strong> Dengarkan cerita hangat mereka! ✨
               </>
             ) : (
               <>
-                <strong style={{ color: '#ffd166' }}>Klik layar</strong> untuk jalan •{' '}
-                <strong style={{ color: '#ffd166' }}>Klik Capy</strong> untuk putar 360° •{' '}
-                <strong style={{ color: '#ffd166' }}>SPASI</strong> lompat
+                <strong className="text-[#ffd166]">Klik layar</strong> untuk jalan •{' '}
+                <strong className="text-[#ffd166]">Klik Capy</strong> untuk putar 360° •{' '}
+                <strong className="text-[#ffd166]">SPASI</strong> lompat
               </>
             )}
           </span>
@@ -445,39 +403,20 @@ export function BeginningWorld() {
 
         {/* Tombol Ready yang muncul di tengah bawah setelah Capy jalan-jalan minimal 4 kali */}
         {hasExitedHouse && walkClicks >= 4 && !isReadyForMascots && (
-          <div
-            style={{
-              position: 'fixed',
-              bottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 35,
-              animation: 'fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-            }}
-          >
+          <div className="fixed bottom-[calc(2.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[35] animate-[fadeUp_0.5s_cubic-bezier(0.16,1,0.3,1)]">
             <button
               id="btn-ready-mascots"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsReadyForMascots(true);
               }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                padding: '0.85rem 2.2rem',
-                borderRadius: '9999px',
-                border: '2px solid rgba(255, 255, 255, 0.85)',
-                background: 'linear-gradient(135deg, #feca57, #ff9f43, #ee5253)',
-                color: '#ffffff',
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                letterSpacing: '0.04em',
-                cursor: 'pointer',
-                boxShadow: '0 8px 30px rgba(238, 82, 83, 0.6), 0 0 25px rgba(254, 202, 87, 0.5)',
-                textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)',
-                transition: 'all 0.25s ease',
-              }}
+              className="flex items-center gap-3 px-9 py-3.5 rounded-full
+                border-2 border-white/85
+                bg-gradient-to-br from-[#feca57] via-[#ff9f43] to-[#ee5253]
+                text-white text-base font-extrabold tracking-wide
+                cursor-pointer shadow-[0_8px_30px_rgba(238,82,83,0.6),0_0_25px_rgba(254,202,87,0.5)]
+                [text-shadow:0_1px_3px_rgba(0,0,0,0.5)] transition-all duration-200
+                hover:scale-105 active:scale-95 min-h-[52px]"
             >
               <span>✨</span>
               <span>Aku Sudah Siap (Ready!)</span>

@@ -428,9 +428,9 @@ export function JourneyWorld() {
   };
 
   return (
-    <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden', background: '#070a14' }}>
+    <div className="relative w-screen h-screen overflow-hidden bg-[#070a14]">
       {/* 1. 3D Canvas Background (Langit Malam Romantis + Sky Lanterns + Taipei 101 + Fireworks + Kebun) */}
-      <div className="scene-container" style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+      <div className="scene-container absolute inset-0 z-[1]">
         <Canvas
           camera={{ position: [0, 0.6, 5.2], fov: 55 }}
           gl={{ alpha: true, antialias: true }}
@@ -566,279 +566,130 @@ export function JourneyWorld() {
         </Canvas>
       </div>
 
-      {/* 2. Setengah Layar Atas: Frame Video Elegan (Menampilkan Video Memori & Kembang Api) */}
-      <div style={{
-        position: 'absolute',
-        top: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
-        left: 0,
-        right: 0,
-        height: 'clamp(130px, 26vh, 280px)',
-        zIndex: 5,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '0 clamp(0.75rem, 2.5vw, 1.5rem)',
-        pointerEvents: 'none',
-      }}>
-        <div style={{
-          position: 'relative',
-          maxHeight: '100%',
-          maxWidth: 'min(88vw, 720px)',
-          height: '100%',
-          aspectRatio: '16/9',
-          borderRadius: '20px',
-          overflow: 'hidden',
-          boxShadow: isFireworksActive
-            ? '0 16px 45px rgba(0, 0, 0, 0.9), 0 0 40px rgba(240, 194, 127, 0.5)'
-            : '0 12px 35px rgba(0, 0, 0, 0.75), 0 0 25px rgba(108, 92, 231, 0.25)',
-          border: isFireworksActive
-            ? '2px solid rgba(240, 194, 127, 0.65)'
-            : '2px solid rgba(162, 155, 254, 0.4)',
-          background: 'linear-gradient(135deg, #0f1423 0%, #1a1b35 100%)',
-          pointerEvents: 'auto',
-          transition: 'all 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-        }}>
-          <video
-            ref={videoRef}
-            src="/video/garden_memory.mp4"
-            loop
-            muted={isMuted}
-            playsInline
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
-              display: isFireworksActive ? 'block' : 'none',
-            }}
-          />
+      {/* 2. UI TOP STACK: Video Panel + Hint Panel (stacked, no overlap) */}
+      <div className="fixed top-[env(safe-area-inset-top,0px)] left-1/2 -translate-x-1/2 z-[25]
+        w-[min(92vw,680px)] flex flex-col items-center gap-1 pt-1.5">
 
-          {/* Banner Romantis Pra-Kembang Api (Sebelum Kertas Surat Terbuka) */}
-          {!isFireworksActive && (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '1.5rem',
-              textAlign: 'center',
-              background: 'radial-gradient(circle at center, rgba(30, 27, 75, 0.85) 0%, rgba(10, 15, 30, 0.95) 100%)',
-              color: '#ffffff',
-            }}>
-              <div style={{
-                fontSize: '2.5rem',
-                marginBottom: '0.4rem',
-                filter: 'drop-shadow(0 0 12px rgba(255, 215, 0, 0.7))',
-                animation: 'pulse 2s infinite ease-in-out',
-              }}>
-                🏮✨
-              </div>
-              <h2 style={{
-                margin: '0 0 0.4rem',
-                fontSize: '1.25rem',
-                fontWeight: 800,
-                letterSpacing: '0.5px',
-                background: 'linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 2px 10px rgba(0,0,0,0.5)',
-              }}>
-                Malam Romantis di Taipei
-              </h2>
-              <p style={{
-                margin: 0,
-                fontSize: '0.86rem',
-                color: '#d1d5db',
-                maxWidth: '420px',
-                lineHeight: 1.5,
-              }}>
-                Capy telah tiba di kota Taipei yang indah bersama lentera malam...
-                Dengarkan sambutan manis dari <strong>Bravo si Beruang Taipei</strong>! 🐻💌
-              </p>
-            </div>
-          )}
-
-          {/* Tombol Unmute Audio Video Kembang Api */}
-          {isFireworksActive && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (videoRef.current) {
-                  videoRef.current.muted = !isMuted;
-                  setIsMuted(!isMuted);
-                }
-              }}
-              style={{
-                position: 'absolute',
-                bottom: '12px',
-                right: '12px',
-                zIndex: 10,
-                background: 'rgba(0, 0, 0, 0.75)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                borderRadius: '9999px',
-                padding: '0.35rem 0.75rem',
-                color: '#ffffff',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              {isMuted ? '🔇 Suara Mati' : '🔊 Suara Aktif'}
-            </button>
-          )}
+        {/* World Indicator Badge */}
+        <div className="px-3 py-0.5 bg-[rgba(12,8,32,0.88)] border border-[var(--color-border)] rounded-full
+          text-[10px] text-[var(--color-text-muted)] tracking-[0.12em] uppercase backdrop-blur-md self-center">
+          {isFireworksActive ? '🎆 Taipei: Pesta Kembang Api' : '🏮 Taipei: Malam Romantis Lentera'}
         </div>
-      </div>
 
-      {/* 3. UI Overlay & Petunjuk Interaksi */}
-      <div className="ui-overlay" style={{ zIndex: 20 }}>
-        {/* World indicator */}
-        <div className="world-indicator">
-          <div className="world-indicator-pill">
-            {isFireworksActive ? 'Taipei: Pesta Kembang Api Ulang Tahun' : '🏮 Taipei: Malam Romantis Lentera'}
+        {/* Video Memory Frame */}
+        <div className="w-full pointer-events-auto">
+          <div
+            className={`relative w-full rounded-2xl overflow-hidden transition-all duration-[600ms] ease-[cubic-bezier(0.16,1,0.3,1)] bg-gradient-to-br from-[#0f1423] to-[#1a1b35]
+              ${isFireworksActive
+                ? 'border-2 border-[rgba(240,194,127,0.65)] shadow-[0_16px_45px_rgba(0,0,0,0.9),0_0_40px_rgba(240,194,127,0.5)]'
+                : 'border-2 border-[rgba(162,155,254,0.4)] shadow-[0_12px_35px_rgba(0,0,0,0.75),0_0_25px_rgba(108,92,231,0.25)]'
+              }`}
+            style={{ aspectRatio: '16/9', maxHeight: 'min(35vh, 240px)' }}
+          >
+            <video
+              ref={videoRef}
+              src="/video/garden_memory.mp4"
+              loop
+              muted={isMuted}
+              playsInline
+              className={`w-full h-full object-contain ${isFireworksActive ? 'block' : 'hidden'}`}
+            />
+
+            {/* Banner Romantis Pra-Kembang Api */}
+            {!isFireworksActive && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center text-white bg-[radial-gradient(circle_at_center,rgba(30,27,75,0.85)_0%,rgba(10,15,30,0.95)_100%)]">
+                <div className="text-2xl sm:text-3xl mb-1 [filter:drop-shadow(0_0_12px_rgba(255,215,0,0.7))] animate-[pulse_2s_ease-in-out_infinite]">
+                  🏮✨
+                </div>
+                <h2 className="m-0 text-base sm:text-xl font-extrabold bg-gradient-to-br from-[#ffeaa7] to-[#fab1a0] bg-clip-text text-transparent">
+                  Malam Romantis di Taipei
+                </h2>
+                <p className="m-0 mt-0.5 text-[10px] sm:text-[0.86rem] text-gray-300 max-w-[320px] leading-snug">
+                  Dengarkan sambutan manis dari <strong>Bravo si Beruang Taipei</strong>! 🐻💌
+                </p>
+              </div>
+            )}
+
+            {/* Tombol Unmute */}
+            {isFireworksActive && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (videoRef.current) {
+                    videoRef.current.muted = !isMuted;
+                    setIsMuted(!isMuted);
+                  }
+                }}
+                className="absolute bottom-2 right-2 z-10 bg-black/75 border border-white/30 rounded-full px-2.5 py-1 text-white text-[10px] font-semibold cursor-pointer flex items-center gap-1 backdrop-blur-sm hover:bg-black/90 transition-all"
+              >
+                {isMuted ? '🔇 Suara Mati' : '🔊 Suara Aktif'}
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Petunjuk Interaksi Atas */}
-        <div style={{
-          position: 'fixed',
-          top: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 25,
-          width: 'min(94vw, 620px)',
-          background: 'rgba(7, 11, 22, 0.94)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(240, 194, 127, 0.5)',
-          borderRadius: '16px',
-          padding: '0.5rem clamp(0.75rem, 2.5vw, 1.3rem)',
-          fontSize: 'clamp(0.68rem, 2.2vw, 0.86rem)',
-          lineHeight: '1.45',
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          textAlign: 'center',
-          gap: '0.5rem',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.75)',
-          pointerEvents: 'none',
-          textShadow: '0 1px 4px rgba(0, 0, 0, 0.9)',
-        }}>
+        {/* Hint Banner — naturally below the video, no overlap */}
+        <div className="w-full bg-[rgba(7,11,22,0.94)] backdrop-blur-md
+          border border-[rgba(240,194,127,0.5)] rounded-xl
+          px-3 py-1.5 text-[clamp(10px,2.2vw,12px)] leading-snug text-white
+          flex items-center justify-center text-center gap-2
+          shadow-[0_4px_20px_rgba(0,0,0,0.75)] pointer-events-none
+          [text-shadow:0_1px_4px_rgba(0,0,0,0.9)]">
           <span>{isFireworksActive ? '🎆' : isArrivalPlaneFlying ? '🛫' : '🏮'}</span>
-          <span>
+          <span className="font-semibold">
             {!hasExitedHouse ? (
-              <>
-                Capy sudah mendarat di Taipei! <strong style={{ color: '#ffd166' }}>Klik pesawat kedatangan ↘</strong> untuk mengajak Capy turun! ✈️🏮
-              </>
+              <>Capy mendarat di Taipei! <strong className="text-[#ffd166]">Klik pesawat ↘</strong> turunkan Capy! ✈️🏮</>
             ) : isArrivalPlaneFlying && !isArrivalPlaneGone ? (
-              <>
-                🛫 <strong style={{ color: '#ffd166' }}>Pesawat kedatangan kembali ke angkasa!</strong> Selamat datang di malam romantis Taipei... ✨
-              </>
+              <>🛫 <strong className="text-[#ffd166]">Pesawat kembali ke angkasa!</strong> Selamat datang di Taipei... ✨</>
             ) : isAirplaneFlying ? (
-              <>
-                🛫 <strong style={{ color: '#ffd166' }}>Pesawat Capy lepas landas!</strong> Menuju realita dan petualangan indah berikutnya... 💖
-              </>
+              <>🛫 <strong className="text-[#ffd166]">Pesawat Capy lepas landas!</strong> Menuju realita... 💖</>
             ) : isReturning ? (
-              <>
-                Capy sedang bersiap naik ke pesawat... ✈️
-              </>
+              <>Capy bersiap naik ke pesawat... ✈️</>
             ) : isLovePromptActive ? (
-              <>
-                💖 <strong style={{ color: '#ff4d6d' }}>Bravo bertanya: Apakah kamu happy?</strong> Klik <strong style={{ color: '#ff4d6d' }}>Icon Cinta 3D</strong> di depan untuk mengirim pesan cinta via WhatsApp! 🥰💌
-              </>
+              <>💖 <strong className="text-[#ff4d6d]">Apakah kamu happy?</strong> Klik <strong className="text-[#ff4d6d]">Icon Cinta 3D</strong> untuk kirim pesan via WhatsApp! 🥰💌</>
             ) : isHeartFilled ? (
-              <>
-                💌 <strong style={{ color: '#ffd166' }}>Pesan telah terkirim!</strong> Kamu bisa baca pesan lagi di pojok kanan ↘ atau naik pesawat di pojok kiri ↙! ✈️✨
-              </>
+              <>💌 <strong className="text-[#ffd166]">Pesan terkirim!</strong> Baca lagi ↘ atau terbang ↙! ✈️✨</>
             ) : isBearActive && !isFireworksActive ? (
-              <>
-                🐻 <strong style={{ color: '#ffd166' }}>Bravo si Beruang Taipei</strong> sedang menyapa Capy! Dengarkan pesan spesialnya... 💌
-              </>
+              <>🐻 <strong className="text-[#ffd166]">Bravo si Beruang Taipei</strong> menyapa Capy! 💌</>
             ) : isNextFlightReady ? (
-              <>
-                ✈️ <strong style={{ color: '#ffd166' }}>Pesawat Perjalanan Selanjutnya telah siap di pojok kiri ↙!</strong> Klik pesawat atau Capy untuk terbang! ✨
-              </>
+              <>✈️ <strong className="text-[#ffd166]">Pesawat siap di pojok kiri ↙!</strong> Klik pesawat atau Capy! ✨</>
             ) : isFireworksActive ? (
-              <>
-                🎆 <strong style={{ color: '#ffd166' }}>Pesta Kembang Api Dimulai!</strong> Baca pesan di surat cinta... Dengarkan pesan suara mas sampai selesai untuk lanjut! 🎙️✨
-              </>
+              <>🎆 <strong className="text-[#ffd166]">Kembang Api Dimulai!</strong> Dengarkan pesan suara sampai selesai! 🎙️✨</>
             ) : (
-              <>
-                <strong style={{ color: '#ffd166' }}>Klik kebun</strong> untuk jalan •{' '}
-                <strong style={{ color: '#ffd166' }}>Klik Capy/Beruang</strong> putar 360°
-              </>
+              <><strong className="text-[#ffd166]">Klik kebun</strong> untuk jalan • <strong className="text-[#ffd166]">Klik Capy/Beruang</strong> putar 360°</>
             )}
           </span>
         </div>
       </div>
 
+
       {/* 4. Animated Simulated Cursor Guide & "Harus happy yaa!" Balloon */}
       {isLovePromptActive && guideCursor && (
         <div
           key={guideCursor.key}
+          className="fixed left-0 top-0 pointer-events-none z-[9999] animate-[guideGlide_0.75s_cubic-bezier(0.25,1,0.5,1)_forwards]"
           style={{
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            pointerEvents: 'none',
-            zIndex: 9999,
-            animation: 'guideGlide 0.75s cubic-bezier(0.25, 1, 0.5, 1) forwards',
             '--startX': `${guideCursor.startX}px`,
             '--startY': `${guideCursor.startY}px`,
             '--targetX': `${guideCursor.targetX}px`,
             '--targetY': `${guideCursor.targetY}px`,
           } as React.CSSProperties}
         >
-          <div style={{ position: 'relative' }}>
-            <div
-              style={{
-                fontSize: '2.4rem',
-                filter: 'drop-shadow(0 4px 12px rgba(255, 77, 109, 0.85))',
-                transform: 'translate(-25%, -25%) rotate(-15deg)',
-              }}
-            >
+          <div className="relative">
+            <div className="text-[2.4rem] [filter:drop-shadow(0_4px_12px_rgba(255,77,109,0.85))] [transform:translate(-25%,-25%)_rotate(-15deg)]">
               👉
             </div>
 
             {/* Balon pesan "Harus happy yaa! 🥺💖✨" jika >= 3 kali klik yang lain */}
             {missClicksCount >= 3 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '46px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  background: 'linear-gradient(135deg, #ff4d6d, #e63946)',
-                  color: '#ffffff',
-                  padding: '0.45rem 1.05rem',
-                  borderRadius: '16px',
-                  border: '2px solid #ffffff',
-                  boxShadow: '0 8px 25px rgba(230, 57, 70, 0.75), 0 0 16px rgba(255, 255, 255, 0.85)',
-                  fontSize: '0.85rem',
-                  fontWeight: 800,
-                  whiteSpace: 'nowrap',
-                  animation: 'bounceBalloon 0.8s infinite alternate ease-in-out',
-                }}
-              >
+              <div className="absolute bottom-[46px] left-1/2 -translate-x-1/2
+                bg-gradient-to-br from-[#ff4d6d] to-[#e63946] text-white
+                px-4 py-2 rounded-2xl border-2 border-white
+                shadow-[0_8px_25px_rgba(230,57,70,0.75),0_0_16px_rgba(255,255,255,0.85)]
+                text-[0.85rem] font-extrabold whitespace-nowrap
+                animate-[bounceBalloon_0.8s_infinite_alternate_ease-in-out]">
                 Harus happy yaa! 🥺💖✨
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '-7px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 0,
-                    height: 0,
-                    borderLeft: '6px solid transparent',
-                    borderRight: '6px solid transparent',
-                    borderTop: '7px solid #e63946',
-                  }}
-                />
+                <div className="absolute bottom-[-7px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[7px] border-t-[#e63946]" />
               </div>
             )}
           </div>
@@ -847,41 +698,19 @@ export function JourneyWorld() {
 
       {/* 5. Tombol Buka Pesan Pembuat Website (Pojok Kanan Bawah) */}
       {(isHeartFilled || dialogueTriggerIndex === 5) && !isReturning && !isAirplaneFlying && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 'calc(1.4rem + env(safe-area-inset-bottom, 0px))',
-            right: 'clamp(1rem, 3.5vw, 2.5rem)',
-            zIndex: 30,
-            display: 'flex',
-            gap: '0.75rem',
-            alignItems: 'center',
-          }}
-        >
+        <div className="fixed bottom-[calc(1.4rem+env(safe-area-inset-bottom,0px))] right-[clamp(1rem,3.5vw,2.5rem)] z-[30] flex gap-3 items-center">
           <button
             id="btn-reopen-letter"
             onClick={(e) => {
               e.stopPropagation();
               handleReopenLetterInJourney();
             }}
-            style={{
-              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.96))',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '2px solid #d4af37',
-              color: '#fef3c7',
-              borderRadius: '9999px',
-              padding: '0.52rem 1.4rem',
-              fontSize: 'clamp(0.78rem, 2.3vw, 0.92rem)',
-              fontWeight: 800,
-              cursor: 'pointer',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.7), 0 0 20px rgba(212, 175, 55, 0.45)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.25s ease',
-              userSelect: 'none',
-            }}
+            className="bg-gradient-to-br from-[rgba(15,23,42,0.96)] to-[rgba(30,41,59,0.96)] backdrop-blur-md
+              border-2 border-[#d4af37] text-[#fef3c7] rounded-full
+              px-6 py-2 text-[clamp(0.78rem,2.3vw,0.92rem)] font-extrabold cursor-pointer
+              shadow-[0_8px_25px_rgba(0,0,0,0.7),0_0_20px_rgba(212,175,55,0.45)]
+              flex items-center gap-2 transition-all duration-200 select-none
+              hover:scale-105 active:scale-95 min-h-[44px]"
           >
             <span>💌</span>
             <span>Buka Pesan Pembuat Website</span>
